@@ -87,7 +87,7 @@ Alternative to if/else:
 ### Installation
 
 ```bash
-cd /workspaces/maybe-a-custom-language
+cd /workspaces/maybe-a-custom     
 chmod +x nexus
 ```
 

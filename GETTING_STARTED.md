@@ -5,15 +5,15 @@
 The Nexus interpreter is ready to use! No installation needed - just Python 3.
 
 ```bash
-cd /workspaces/maybe-a-custom-language
-chmod +x nexus
+cd path/to/nexus-lang
+bash install.sh
 ```
 
 ## Your First Nexus Program
 
 ### 1. Hello World
 ```bash
-python3 nexus nexus_examples/01_hello.nexus
+nexus run nexus_examples/01_hello.nexus
 ```
 
 Output:
@@ -23,7 +23,7 @@ Hello, Nexus World!
 
 ### 2. Variables & Arithmetic
 ```bash
-python3 nexus nexus_examples/02_variables.nexus
+nexus run nexus_examples/02_variables.nexus
 ```
 
 Output:
@@ -33,7 +33,7 @@ Output:
 
 ### 3. Collections (Pools)
 ```bash
-python3 nexus nexus_examples/03_pools.nexus
+nexus run nexus_examples/03_pools.nexus
 ```
 
 Output:
@@ -47,7 +47,7 @@ Output:
 Try Nexus interactively:
 
 ```bash
-python3 nexus --repl
+nexus repl
 ```
 
 Then type:

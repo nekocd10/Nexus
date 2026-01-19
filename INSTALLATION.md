@@ -15,12 +15,13 @@ cd maybe-a-custom-language
 bash install.sh
 ```
 
-After installation, you can use `nexus` and `nxs` commands globally:
+After installation, you can use `nexus` and `nxs` commands globally from any directory:
 
 ```bash
-nexus new myapp          # Create a new project
-nexus dev                # Start development server
-nxs install react        # Install packages
+nexus new myapp              # Create a new project
+nexus dev                    # Start development server
+nxs install react express    # Install packages
+nxs remove package react     # Remove a package
 ```
 
 ### Option 2: Manual Installation

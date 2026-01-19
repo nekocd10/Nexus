@@ -310,7 +310,7 @@ def main():
         print("Commands:")
         print("  install <package>         Install a package")
         print("  install <pkg1> <pkg2>...  Install multiple packages")
-        print("  remove <package>          Remove a package")
+        print("  remove package <package>  Remove a package")
         print("  search <query>            Search for packages")
         print("  list                      List installed packages")
         print("  update                    Update all packages")
@@ -336,10 +336,10 @@ def main():
         pm.add_dependencies(packages)
     
     elif command == "remove":
-        if len(sys.argv) < 3:
-            print("Usage: nxs remove <package>")
+        if len(sys.argv) < 4 or sys.argv[2] != "package":
+            print("Usage: nxs remove package <package>")
             sys.exit(1)
-        pm.remove(sys.argv[2])
+        pm.remove(sys.argv[3])
     
     elif command == "search":
         if len(sys.argv) < 3:

@@ -64,64 +64,67 @@ echo "🔗 Creating CLI entry points..."
 
 # For Linux/macOS
 if [ "$PLATFORM" != "windows" ]; then
+    # Determine installation prefix
+    INSTALL_PREFIX="/usr/local"
+    
+    # Check if we have write permissions
+    if [ ! -w "$INSTALL_PREFIX/bin" ]; then
+        echo "⚠️  No write access to $INSTALL_PREFIX/bin (trying with sudo)..."
+        SUDO="sudo"
+    else
+        SUDO=""
+    fi
+    
     # Create nexus command wrapper
-    if [ -d "/usr/local/bin" ] && [ -w "/usr/local/bin" ]; then
-        cat > /usr/local/bin/nexus << 'EOF'
+    cat > /tmp/nexus << 'EOF'
 #!/usr/bin/env python3
 """
 Nexus Programming Language CLI
-Global entry point
+Global entry point - installed via setuptools
 """
 
 import sys
 import os
 
-# Add the nexus directory to Python path
-nexus_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if os.path.exists(os.path.join(nexus_dir, "nexus_cli.py")):
-    sys.path.insert(0, nexus_dir)
-
 try:
     from nexus_cli import main
     main()
-except ImportError:
-    # Fallback to installed package
-    from nexus_cli import main
-    main()
+except ImportError as e:
+    print(f"Error: Nexus CLI not found. Please reinstall: pip install -e .", file=sys.stderr)
+    sys.exit(1)
 EOF
-        chmod +x /usr/local/bin/nexus
-        echo "✓ Created /usr/local/bin/nexus"
-    else
-        echo "⚠️  Cannot write to /usr/local/bin (needs sudo)"
-    fi
+    
+    $SUDO install -m 755 /tmp/nexus "$INSTALL_PREFIX/bin/nexus"
+    echo "✓ Created $INSTALL_PREFIX/bin/nexus"
     
     # Create nxs command wrapper
-    if [ -d "/usr/local/bin" ] && [ -w "/usr/local/bin" ]; then
-        cat > /usr/local/bin/nxs << 'EOF'
+    cat > /tmp/nxs << 'EOF'
 #!/usr/bin/env python3
 """
 Nexus Package Manager CLI
-Global entry point
+Global entry point - installed via setuptools
 """
 
 import sys
 import os
 
-# Add the nexus directory to Python path
-nexus_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if os.path.exists(os.path.join(nexus_dir, "nxs_pm.py")):
-    sys.path.insert(0, nexus_dir)
-
 try:
     from nxs_pm import main
     main()
-except ImportError:
-    # Fallback to installed package
-    from nxs_pm import main
-    main()
+except ImportError as e:
+    print(f"Error: Nexus PM not found. Please reinstall: pip install -e .", file=sys.stderr)
+    sys.exit(1)
 EOF
-        chmod +x /usr/local/bin/nxs
-        echo "✓ Created /usr/local/bin/nxs"
+    
+    $SUDO install -m 755 /tmp/nxs "$INSTALL_PREFIX/bin/nxs"
+    echo "✓ Created $INSTALL_PREFIX/bin/nxs"
+    
+    # Verify installation
+    if command -v nexus &> /dev/null; then
+        echo "✓ Verified: nexus command is available in PATH"
+    else
+        echo "⚠️  Warning: nexus command not found in PATH"
+        echo "   Make sure $INSTALL_PREFIX/bin is in your PATH"
     fi
 fi
 

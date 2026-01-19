@@ -1,0 +1,13 @@
+// Example 5: Arithmetic Operations
+// Math operations flowing through data
+
+#var a = 15
+#var b = 3
+
+a + b => output
+
+a - b => output
+
+a * b => output
+
+a / b => output

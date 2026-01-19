@@ -1,0 +1,15 @@
+// Example 7: State Mutation
+// Using mutable state with @var
+
+@var counter = 0
+
+counter => output
+
+@var result = 0
+result = counter + 10
+result => output
+
+@var x = 5
+x ++> x
+
+x => output

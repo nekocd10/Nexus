@@ -1,0 +1,9 @@
+// Example 3: Pools (Arrays)
+// Working with ordered pools
+
+#var numbers = [| 1, 2, 3, 4, 5 |]
+numbers => output
+
+// Keyed pools (objects)
+#var person = [: name="Alice", age=30, city="NYC" :]
+person => output

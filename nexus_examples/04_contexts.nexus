@@ -1,0 +1,13 @@
+// Example 4: Context Definition
+// Nexus uses contexts instead of functions
+
+~context add_numbers
+  @in: a, b
+  @out: result
+  result = a + b
+
+// Another context
+~context multiply
+  @in: x, y  
+  @out: product
+  product = x * y

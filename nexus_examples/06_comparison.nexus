@@ -1,0 +1,12 @@
+// Example 6: Comparison Operations
+// Using comparison with output
+
+#var x = 25
+
+x > 10 => output
+
+x == 25 => output
+
+x < 100 => output
+
+x != 20 => output

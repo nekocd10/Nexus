@@ -1,0 +1,27 @@
+it needs to have its own package manager called nxs so you would use "nexus nxs <install, remove,search, version,run,build/compile,etc> it also needs to work with other languages and ti should work with a custom file extention called .nxsjs which is for like backend stuff and it is not javascript despite js being in the name and .nxs for the frontend but nxsjs can only be backend and not frontend it needs to be able to use html syntax in .nxs files and a completely origianl one that will work in the browser and otehr stuff etc need anything else just ask me
+
+This is a major expansion! Let me clarify some things before I build this:
+
+Package Manager (nxs) - Should it connect to a central registry (like npm) or work locally?
+
+.nxs Frontend Language - When you say "original HTML syntax," do you mean:
+
+Something like <view>, <component>, <state> tags?
+Or completely different?
+.nxsjs Backend Language - Should it have:
+
+Database integration built-in?
+HTTP/API handling?
+File system access?
+Interoperability - How should it work with other languages? For example:
+
+Call Python/JavaScript functions?
+Share data formats?
+Use standard protocols?
+Browser Compilation - Should .nxs files compile to:
+
+Regular HTML/CSS/JS?
+WebAssembly?
+Something else?
+Build System - Should there be a bundler like webpack?
+the package manager should be like npm like it can use npm packages and custom packages how that happens you find it out and yes to everything and more fro number 3 and for number 2 like it can use syntax from .html .ejs files and otjer file types that use html syntax or whateber and it can also use a custom syntax for gui and stuff that is completely different from html for number 4 i got no clue and for number 5 it should be a custom language that works in the browser and for number 6 i guess so

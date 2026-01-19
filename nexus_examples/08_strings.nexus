@@ -1,0 +1,8 @@
+// Example 8: String Operations
+// Working with strings
+
+#var greeting = "Hello, "
+#var name = "Nexus"
+#var message = greeting + name
+
+message => output

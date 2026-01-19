@@ -1,0 +1,4 @@
+// Example 1: Hello World in Nexus
+// Simple literal flow to output
+
+"Hello, Nexus World!" => output

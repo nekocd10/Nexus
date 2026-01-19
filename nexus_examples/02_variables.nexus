@@ -1,0 +1,8 @@
+// Example 2: Variables and Data Flow
+// Demonstrate mutable and immutable bindings
+
+#var x = 10
+@var y = 20
+#var sum = x + y
+
+sum => output

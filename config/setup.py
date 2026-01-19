@@ -14,7 +14,7 @@ long_description = readme_path.read_text() if readme_path.exists() else ""
 setup(
     name="nexus-lang",
     version="1.0.0",
-    description="A simple, intuitive programming language for clarity and expressiveness",
+    description="A completely original programming language with unique syntax and paradigms",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Nexus Community",
@@ -22,29 +22,23 @@ setup(
     url="https://github.com/nekocd10/maybe-a-custom-language",
     license="MIT",
     
-    packages=find_packages(include=["src", "nxs_modules"]),
     py_modules=[
-        "src.cli",
-        "src.interpreter",
-        "src.lexer",
-        "src.parser",
-        "src.package_manager",
-        "src.frontend",
-        "src.backend",
-        "src.build",
-        "src.interop",
-        "src.bundler"
+        "nexus_cli",
+        "nexus_interpreter",
+        "nexus_lexer",
+        "nexus_parser",
+        "nxs_pm",
+        "nxs_frontend",
+        "nxs_backend",
+        "nxs_build",
+        "nxs_interop"
     ],
     
     entry_points={
         "console_scripts": [
-            "nexus=src.cli:main",
-            "nexus-pm=src.package_manager:main"
+            "nexus=nexus_cli:main",
+            "nxs=nxs_pm:main"
         ]
-    },
-    
-    package_data={
-        "nxs_modules": ["*.nexus", "*.py"],
     },
     
     classifiers=[

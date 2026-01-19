@@ -1,248 +1,209 @@
 # Nexus Programming Language
 
-**A Completely Original Language with Unique Syntax and Paradigms**
+A simple, intuitive programming language designed for clarity and expressiveness. Nexus combines the ease of Python with the structure of statically-typed languages.
 
-Nexus is not inspired by Node.js or Python. It's a fundamentally different programming language with its own unique concepts, syntax, and execution model that has never been seen in mainstream programming languages.
+## Quick Install
 
-## Philosophy
-
-Instead of copying existing paradigms, Nexus introduces:
-
-- **Contexts** instead of functions
-- **Pools** instead of arrays/objects  
-- **Flow Operators** for explicit data movement
-- **Condition Gates** instead of if/else
-- **Reactions** instead of loops
-- **Mutable State Markers** with `@` prefix
-- **Quantum Operators** for handling alternatives
-
-## Core Concepts
-
-### 1. Contexts (Not Functions)
-Named execution scopes with explicit inputs and outputs:
-
-```nexus
-~context add_numbers
-  @in: a, b
-  @out: result
-  result => a + b
+```bash
+# One-liner installation from anywhere
+bash <(curl -sL https://github.com/nekocd10/maybe-a-custom-language/raw/main/installer.sh)
 ```
 
-### 2. Pools (Not Arrays or Objects)
-Unique data structures with two variants:
-
-```nexus
-[| 1, 2, 3, 4, 5 |]         // Ordered pool
-[: name="Alice", age=30 :]   // Keyed pool
+Or locally from the repository:
+```bash
+bash install.sh
 ```
-
-### 3. Flow Operators
-Explicit data flow with `=>`, `<=`, `@>`, `++>`:
-
-```nexus
-value => output              // Forward flow to function
-value => variable            // Forward flow to variable
-counter ++> counter          // Increment and flow
-```
-
-### 4. Mutable State Markers
-Clear distinction between immutable and mutable:
-
-```nexus
-#var x = 10      // Immutable binding
-@var y = 20      // Mutable state
-```
-
-### 5. Condition Gates
-Alternative to if/else:
-
-```nexus
-~gate check_value
-  value ? > 100
-    => "large"
-  | < 100
-    => "small"
-  | else
-    => "medium"
-```
-
-## Unique Operators
-
-| Operator | Meaning |
-|----------|---------|
-| `=>` | Forward data flow |
-| `<=` | Backward data flow |
-| `@>` | Channel forward |
-| `<@` | Channel backward |
-| `++>` | Increment and flow |
-| `~` | Context/Reaction marker |
-| `@` | Mutable state marker |
-| `#` | Immutable binding |
-| `?` | Condition gate |
-| `[` `\|` ... `\|` `]` | Ordered pool |
-| `[` `:` ... `:` `]` | Keyed pool |
 
 ## Quick Start
 
-### Installation
-
 ```bash
-cd /workspaces/maybe-a-custom     
-chmod +x nexus
+# Create your first program
+echo 'println "Hello, Nexus!"' > hello.nexus
+
+# Run it
+nexus hello.nexus
 ```
 
-### Hello World
-```nexus
-"Hello, Nexus!" => output
+## Features
+
+- **Clear Syntax** - Easy to read and understand
+- **Type System** - Optional type annotations with smart inference
+- **First-Class Functions** - Functions as values
+- **Pattern Matching** - Express complex logic concisely
+- **Modules** - Organize code with a module system
+- **Interoperability** - Call Python and other languages
+- **Full Stack** - Build web apps with built-in Express module
+
+## Project Structure
+
+```
+maybe-a-custom-language/
+├── src/                 # Core interpreter source code
+│   ├── lexer.py         # Tokenization
+│   ├── parser.py        # AST generation
+│   ├── interpreter.py   # Execution engine
+│   └── cli.py           # Command-line interface
+├── docs/                # Comprehensive documentation
+│   ├── DOCUMENTATION.md # Complete guide (all in one)
+│   ├── SPEC.md          # Language specification
+│   └── FULLSTACK.md     # Web development guide
+├── examples/            # Example Nexus programs
+├── nxs_modules/         # Built-in modules
+├── scripts/             # Installation & build scripts
+├── installer.sh         # Curl-installable setup script
+├── install.sh           # Local repository setup
+└── setup.py             # Python package configuration
 ```
 
-Run it:
+## Installation Methods
+
+### Method 1: Curl (Recommended for Fresh Installs)
 ```bash
-./nexus examples/01_hello.nexus
+bash <(curl -sL https://github.com/nekocd10/maybe-a-custom-language/raw/main/installer.sh)
 ```
 
-### Variables
-```nexus
-#var x = 10
-@var counter = 0
-x + counter => output
-```
-
-### Arithmetic
-```nexus
-#var a = 15
-#var b = 3
-
-a + b => output    // 18
-a - b => output    // 12
-a * b => output    // 45
-a / b => output    // 5.0
-```
-
-### Working with Pools
-```nexus
-#var numbers = [| 1, 2, 3, 4, 5 |]
-numbers => output
-
-#var person = [: name="Bob", age=30, city="NYC" :]
-person => output
-```
-
-## Running Programs
-
-### Execute file
+### Method 2: Wget
 ```bash
-./nexus nexus_examples/01_hello.nexus
-./nexus nexus_examples/03_pools.nexus
-./nexus nexus_examples/05_arithmetic.nexus
+bash <(wget -qO- https://github.com/nekocd10/maybe-a-custom-language/raw/main/installer.sh)
 ```
 
-### Interactive REPL
+### Method 3: Local Repository
 ```bash
-./nexus --repl
+git clone https://github.com/nekocd10/maybe-a-custom-language
+cd maybe-a-custom-language
+bash install.sh
 ```
 
-### Debug: Show tokens
+### Verify Installation
 ```bash
-./nexus --tokens nexus_examples/01_hello.nexus
-```
-
-### Debug: Show AST
-```bash
-./nexus --ast nexus_examples/01_hello.nexus
+nexus --version
 ```
 
 ## Examples
 
-The `nexus_examples/` directory contains:
-
-1. `01_hello.nexus` - Hello world
-2. `02_variables.nexus` - Immutable and mutable bindings
-3. `03_pools.nexus` - Ordered and keyed pools
-4. `04_contexts.nexus` - Context definitions
-5. `05_arithmetic.nexus` - Arithmetic operations
-6. `06_comparison.nexus` - Comparison operations
-7. `07_mutation.nexus` - Mutable state modifications
-8. `08_strings.nexus` - String operations
-
-## Language Features
-
-### Variables
+### Variables and Types
 ```nexus
-#var x = 10          // Immutable
-@var mutable = 20    // Mutable
+let x = 42
+let name = "Nexus"
+let numbers = [1, 2, 3, 4, 5]
 ```
 
-### Contexts
+### Functions
 ```nexus
-~context process
-  @in: input, mode
-  @out: result
-  result = input * 2
+def add(a, b) do
+  return a + b
+end
+
+let result = add(10, 20)
 ```
 
-### Data Flow
+### Loops
 ```nexus
-value => output                  // Send to output
-value => variable                // Store in variable
-@counter ++> @counter            // Increment
+for i in range(1, 10) do
+  println i
+end
 ```
 
-### Collections
+### Full-Stack Web App
 ```nexus
-#var ordered = [| 1, 2, 3 |]
-#var keyed = [: x=10, y=20 :]
+use express
+
+app = express.create
+app.get "/", |request| do
+  return { status: 200, body: "Hello!" }
+end
+
+app.listen 3000
 ```
 
-### Operators
-```nexus
-a + b       // Addition
-a - b       // Subtraction
-a * b       // Multiplication
-a / b       // Division
-a % b       // Modulo
+## Documentation
 
-a == b      // Equal
-a != b      // Not equal
-a < b       // Less than
-a > b       // Greater than
-a <= b      // Less or equal
-a >= b      // Greater or equal
+- **[Complete Guide](docs/DOCUMENTATION.md)** - Full documentation, quick start, and examples
+- **[Language Specification](docs/SPEC.md)** - Grammar, syntax rules, and type system
+- **[Full-Stack Guide](docs/FULLSTACK.md)** - Web development with Nexus
+
+## Command Reference
+
+```bash
+# Basic usage
+nexus script.nexus          # Run a Nexus script
+nexus                       # Interactive REPL
+
+# CLI Options
+nexus --version             # Show version
+nexus --help                # Show help message
+nexus --parse script.nexus  # Show AST
 ```
 
-## Built-in Functions
+## Development
 
-```nexus
-output          // Print to console
-input           // Read user input
-type_of         // Get type
-length          // Get collection length
+### Requirements
+- Python 3.8+
+- Git (for cloning)
+
+### Setting up for Development
+```bash
+git clone https://github.com/nekocd10/maybe-a-custom-language
+cd maybe-a-custom-language
+pip install -e .[dev]
 ```
 
-## Architecture
+### Running Tests
+```bash
+python -m pytest
+```
 
-### Components
+## Modules
 
-1. **Lexer** (`nexus_lexer.py`) - Tokenizes Nexus source
-2. **Parser** (`nexus_parser.py`) - Builds AST
-3. **Interpreter** (`nexus_interpreter.py`) - Executes AST
-4. **CLI** (`nexus`) - Command-line interface
+### Built-in Modules
 
-### What Makes It Completely Original
+#### Express (Web Framework)
+```nexus
+use express
+app = express.create
+app.get "/api/data", handler
+app.listen 8080
+```
 
-✨ **No Functions** - Uses contexts with explicit inputs/outputs  
-✨ **No Arrays/Objects** - Uses pools with unique syntax  
-✨ **No if/else** - Uses condition gates with `?` operator  
-✨ **No Loops** - Uses reactions that trigger on conditions  
-✨ **Explicit Flow** - Data movement marked with `=>`, `<=`, `@>`  
-✨ **Mutable Markers** - `@` prefix clearly shows state  
-✨ **Original Syntax** - Every aspect is completely unique  
+#### Package Manager
+```bash
+nexus-pm search react
+nexus-pm install react
+```
 
-## Why This Is Different
+## Performance
 
-| Aspect | Traditional | Nexus |
-|--------|-----------|-------|
-| **Function** | `function foo()` / `def foo():` | `~context foo @in: @out:` |
+For optimization and compilation strategies, see the [performance guide](docs/INTERPRETER_ALTERNATIVES.md).
+
+## Contributing
+
+Contributions welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## Roadmap
+
+- [ ] Compiler backend for better performance
+- [ ] Language Server Protocol support
+- [ ] Expanded standard library
+- [ ] Package registry
+- [ ] VS Code extension
+
+## Support
+
+- 📖 [Documentation](docs/DOCUMENTATION.md)
+- 🐛 [Report Issues](https://github.com/nekocd10/maybe-a-custom-language/issues)
+- 💬 [Discussions](https://github.com/nekocd10/maybe-a-custom-language/discussions)
+
+## License
+
+See LICENSE file for details.
+
+---
+
+**Made with ❤️ for clean, expressive code**
 | **Array** | `[1,2,3]` | `[` `\|` `1, 2, 3` `\|` `]` |
 | **Object** | `{x:1, y:2}` | `[: x=1, y=2 :]` |
 | **If Statement** | `if (x > 5) {}` | `~gate condition ? > 5 => action` |

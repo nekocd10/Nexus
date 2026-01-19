@@ -1,0 +1,9 @@
+nexus_cli
+nexus_interpreter
+nexus_lexer
+nexus_parser
+nxs_backend
+nxs_build
+nxs_frontend
+nxs_interop
+nxs_pm

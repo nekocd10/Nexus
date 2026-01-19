@@ -1,0 +1,16 @@
+README.md
+nexus_cli.py
+nexus_interpreter.py
+nexus_lexer.py
+nexus_parser.py
+nxs_backend.py
+nxs_build.py
+nxs_frontend.py
+nxs_interop.py
+nxs_pm.py
+setup.py
+nexus_lang.egg-info/PKG-INFO
+nexus_lang.egg-info/SOURCES.txt
+nexus_lang.egg-info/dependency_links.txt
+nexus_lang.egg-info/entry_points.txt
+nexus_lang.egg-info/top_level.txt

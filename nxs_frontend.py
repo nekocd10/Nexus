@@ -1,12 +1,14 @@
 """
 Nexus Frontend Language (.nxs)
 Compiles to JavaScript/HTML for browser
-Supports HTML syntax + custom GUI components
+Supports HTML syntax + EJS + custom GUI components
 """
 
 import re
+import os
 from typing import List, Dict, Any
 from dataclasses import dataclass
+
 
 @dataclass
 class NxsComponent:
@@ -15,21 +17,73 @@ class NxsComponent:
     children: List[Any]
     content: str = ""
 
+
 class NxsParser:
     def __init__(self, source: str):
         self.source = source
         self.pos = 0
         self.tokens = []
+        self.scripts = []
+        self.styles = []
     
     def parse(self) -> str:
         """Parse .nxs frontend code and return HTML/JS"""
+        # Extract scripts and styles first
+        self.extract_blocks()
+        
         # Replace custom syntax with standard
         html = self.compile_custom_tags(self.source)
+        html = self.compile_ejs_syntax(html)
+        html = self.compile_html_syntax(html)
         
         # Wrap with boilerplate
         return self.generate_html(html)
     
-    def compile_custom_tags(self, source: str) -> str:
+    def extract_blocks(self):
+        """Extract <script> and <style> blocks"""
+        # Extract scripts
+        script_matches = re.findall(r'<script\s*([^>]*)>(.*?)</script>', self.source, re.DOTALL | re.IGNORECASE)
+        for attrs, content in script_matches:
+            self.scripts.append((attrs, content.strip()))
+        
+        # Extract styles
+        style_matches = re.findall(r'<style\s*([^>]*)>(.*?)</style>', self.source, re.DOTALL | re.IGNORECASE)
+        for attrs, content in style_matches:
+            self.styles.append((attrs, content.strip()))
+        
+        # Remove them from source for processing
+        self.source = re.sub(r'<script\s*[^>]*>.*?</script>', '', self.source, flags=re.DOTALL | re.IGNORECASE)
+        self.source = re.sub(r'<style\s*[^>]*>.*?</style>', '', self.source, flags=re.DOTALL | re.IGNORECASE)
+    
+    def compile_ejs_syntax(self, source: str) -> str:
+        """Support EJS template syntax like <%= %>, <% %>, <%- %>"""
+        # <%= expression %> - escaped output
+        source = re.sub(
+            r'<%=\s*([^%]*?)\s*%>',
+            lambda m: f'{{{{ {m.group(1)} }}}}',
+            source
+        )
+        
+        # <%- expression %> - unescaped output
+        source = re.sub(
+            r'<%-\s*([^%]*?)\s*%>',
+            lambda m: f'{{{{ {m.group(1)} | safe }}}}',
+            source
+        )
+        
+        # <% code %> - execute code (for loops, conditions, etc)
+        source = re.sub(
+            r'<%\s*([^%]*?)\s*%>',
+            lambda m: f'<!-- {m.group(1)} -->',
+            source
+        )
+        
+        return source
+    
+    def compile_html_syntax(self, source: str) -> str:
+        """Support standard HTML syntax"""
+        # HTML is kept as-is, just pass through
+        return source
         """Convert custom tags to HTML"""
         result = source
         

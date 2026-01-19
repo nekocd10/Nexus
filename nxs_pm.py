@@ -252,21 +252,77 @@ class NxsPackageManager:
     def get_version(self):
         """Get nxs version"""
         return "1.0.0"
+    
+    def run_script(self, script_name: str):
+        """Run a script defined in nxs.json"""
+        if not self.project_package_json.exists():
+            print("❌ nxs.json not found")
+            sys.exit(1)
+        
+        with open(self.project_package_json, 'r') as f:
+            pkg_json = json.load(f)
+        
+        if "scripts" not in pkg_json or script_name not in pkg_json["scripts"]:
+            print(f"❌ Script '{script_name}' not found in nxs.json")
+            sys.exit(1)
+        
+        script = pkg_json["scripts"][script_name]
+        print(f"▶️  Running script: {script}")
+        
+        result = subprocess.run(script, shell=True)
+        sys.exit(result.returncode)
+    
+    def add_dependencies(self, packages: List[str], dev: bool = False):
+        """Add multiple dependencies at once"""
+        for pkg in packages:
+            version = "latest"
+            if "@" in pkg:
+                pkg, version = pkg.rsplit("@", 1)
+            self.install(pkg, version)
+    
+    def update_all(self):
+        """Update all packages"""
+        if not self.project_package_json.exists():
+            print("❌ nxs.json not found")
+            return
+        
+        with open(self.project_package_json, 'r') as f:
+            pkg_json = json.load(f)
+        
+        if "dependencies" in pkg_json:
+            print("🔄 Updating all packages...")
+            for pkg_name in pkg_json["dependencies"]:
+                print(f"  Updating {pkg_name}...")
+                self.install(pkg_name, "latest")
+        
+        print("✅ All packages updated")
 
 
 def main():
     if len(sys.argv) < 2:
-        print("Nexus Package Manager (nxs)")
+        print("╔═══════════════════════════════════════════╗")
+        print("║   Nexus Package Manager (nxs) v1.0.0      ║")
+        print("║   npm-compatible package management       ║")
+        print("╚═══════════════════════════════════════════╝")
         print()
         print("Usage: nxs <command> [args]")
         print()
         print("Commands:")
         print("  install <package>         Install a package")
+        print("  install <pkg1> <pkg2>...  Install multiple packages")
         print("  remove <package>          Remove a package")
         print("  search <query>            Search for packages")
         print("  list                      List installed packages")
+        print("  update                    Update all packages")
+        print("  run <script>              Run a script from nxs.json")
         print("  publish <name> <version>  Publish a package")
         print("  version                   Show nxs version")
+        print()
+        print("Examples:")
+        print("  nxs install react vue express")
+        print("  nxs install @types/node")
+        print("  nxs search database")
+        print("  nxs run build")
         sys.exit(1)
     
     pm = NxsPackageManager()
@@ -274,9 +330,10 @@ def main():
     
     if command == "install":
         if len(sys.argv) < 3:
-            print("Usage: nxs install <package>")
+            print("Usage: nxs install <package> [package2] [package3]...")
             sys.exit(1)
-        pm.install(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "latest")
+        packages = sys.argv[2:]
+        pm.add_dependencies(packages)
     
     elif command == "remove":
         if len(sys.argv) < 3:
@@ -293,6 +350,15 @@ def main():
     elif command == "list":
         pm.list_packages()
     
+    elif command == "update":
+        pm.update_all()
+    
+    elif command == "run":
+        if len(sys.argv) < 3:
+            print("Usage: nxs run <script>")
+            sys.exit(1)
+        pm.run_script(sys.argv[2])
+    
     elif command == "publish":
         if len(sys.argv) < 4:
             print("Usage: nxs publish <name> <version> [description]")
@@ -304,7 +370,8 @@ def main():
         print(f"nxs {pm.get_version()}")
     
     else:
-        print(f"Unknown command: {command}")
+        print(f"❌ Unknown command: {command}")
+        print("Try 'nxs' for help")
         sys.exit(1)
 
 

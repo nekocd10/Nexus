@@ -1,48 +1,115 @@
 """
 Nexus Interoperability Layer
 Allows calling Python, JavaScript, and other functions from Nexus
+Full integration with npm packages, external APIs, and databases
 """
 
 import os
 import json
 import subprocess
+import sys
+import importlib.util
 from pathlib import Path
 from typing import Any, Dict, List, Callable, Optional
+from urllib.request import urlopen, Request
+from urllib.error import HTTPError
+import urllib.parse
 
 
-class NexusInterop:
+class InteropBridge:
     """Handle cross-language interoperability"""
     
     def __init__(self):
         self.python_functions: Dict[str, Callable] = {}
         self.js_functions: Dict[str, str] = {}
+        self.npm_packages: Dict[str, Any] = {}
         self.exports: Dict[str, Any] = {}
+        self.python_modules = {}
+    
+    # ============ Python Integration ============
+    
+    def import_python_module(self, module_name: str) -> Any:
+        """Import a Python module"""
+        if module_name in self.python_modules:
+            return self.python_modules[module_name]
+        
+        try:
+            module = __import__(module_name)
+            self.python_modules[module_name] = module
+            return module
+        except ImportError as e:
+            raise ImportError(f"Cannot import Python module '{module_name}': {e}")
+    
+    def import_python_file(self, file_path: str) -> Any:
+        """Import a Python file"""
+        path = Path(file_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Python file not found: {file_path}")
+        
+        spec = importlib.util.spec_from_file_location("nexus_imported", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    
+    def call_python_function(self, module_name: str, function_name: str, *args, **kwargs) -> Any:
+        """Call a Python function"""
+        module = self.import_python_module(module_name)
+        if not hasattr(module, function_name):
+            raise AttributeError(f"Function '{function_name}' not found in '{module_name}'")
+        return getattr(module, function_name)(*args, **kwargs)
     
     def register_python_function(self, name: str, func: Callable):
         """Register a Python function for Nexus to call"""
         self.python_functions[name] = func
     
+    # ============ JavaScript Integration ============
+    
     def register_js_function(self, name: str, code: str):
         """Register a JavaScript function for Nexus to call"""
         self.js_functions[name] = code
     
-    def call_python(self, func_name: str, *args, **kwargs) -> Any:
-        """Call a registered Python function"""
-        if func_name not in self.python_functions:
-            raise ValueError(f"Python function not found: {func_name}")
+    def execute_js_code(self, code: str, context: Dict[str, Any] = None) -> Any:
+        """Execute JavaScript code"""
+        try:
+            import tempfile
+            
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+                if context:
+                    for key, value in context.items():
+                        if isinstance(value, str):
+                            f.write(f"const {key} = '{value}';\n")
+                        else:
+                            f.write(f"const {key} = {json.dumps(value)};\n")
+                
+                f.write(code)
+                script_path = f.name
+            
+            result = subprocess.run(
+                ["node", script_path],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            Path(script_path).unlink()
+            
+            if result.returncode == 0:
+                try:
+                    return json.loads(result.stdout)
+                except:
+                    return result.stdout.strip()
+            else:
+                raise RuntimeError(f"JS execution failed: {result.stderr}")
         
-        func = self.python_functions[func_name]
-        return func(*args, **kwargs)
+        except Exception as e:
+            raise RuntimeError(f"Cannot execute JavaScript: {e}")
     
     def call_js(self, func_name: str, *args) -> Any:
         """Call a registered JavaScript function"""
         if func_name not in self.js_functions:
             raise ValueError(f"JavaScript function not found: {func_name}")
         
-        # Prepare arguments as JSON
         js_args = json.dumps(args)
-        
-        # Execute via Node.js
         js_code = f"""
 const fn = {self.js_functions[func_name]};
 const result = fn(...{js_args});
@@ -52,32 +119,113 @@ console.log(JSON.stringify(result));
         try:
             result = subprocess.check_output(
                 ["node", "-e", js_code],
-                text=True
+                text=True,
+                timeout=30
             ).strip()
-            
             return json.loads(result)
-        
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"JavaScript execution failed: {e}")
+    
+    # ============ NPM Package Integration ============
+    
+    def import_npm_package(self, package_name: str) -> Dict[str, Any]:
+        """Import an npm package"""
+        if package_name in self.npm_packages:
+            return self.npm_packages[package_name]
+        
+        return {
+            "name": package_name,
+            "type": "npm",
+            "can_import": True,
+            "available": True
+        }
+    
+    def call_npm_function(self, package_name: str, function_name: str, *args) -> Any:
+        """Call a function from an npm package"""
+        js_code = f"""
+const pkg = require('{package_name}');
+const fn = pkg.{function_name};
+const result = fn({', '.join(json.dumps(a) for a in args)});
+console.log(JSON.stringify(result));
+"""
+        return self.execute_js_code(js_code)
+    
+    # ============ HTTP/REST Integration ============
+    
+    def http_request(self, method: str, url: str, headers: Dict = None, 
+                    data: Dict = None, timeout: int = 30) -> Dict[str, Any]:
+        """Make HTTP requests"""
+        try:
+            req_data = json.dumps(data).encode() if data else None
+            req = Request(
+                url,
+                data=req_data,
+                headers=headers or {},
+                method=method
+            )
+            
+            with urlopen(req, timeout=timeout) as response:
+                body = response.read().decode()
+                return {
+                    "status": response.status,
+                    "headers": dict(response.headers),
+                    "body": body,
+                    "ok": 200 <= response.status < 300
+                }
+        except HTTPError as e:
+            return {
+                "status": e.code,
+                "headers": dict(e.headers),
+                "body": e.read().decode(),
+                "ok": False
+            }
+        except Exception as e:
+            raise RuntimeError(f"HTTP request failed: {e}")
+    
+    def rest_api_call(self, endpoint: str, method: str = "GET", 
+                     params: Dict = None, body: Dict = None) -> Dict:
+        """Make REST API calls"""
+        url = endpoint
+        if params:
+            url += "?" + urllib.parse.urlencode(params)
+        return self.http_request(method, url, data=body)
+    
+    def fetch_json(self, url: str, headers: Dict = None) -> Any:
+        """Fetch JSON from URL"""
+        response = self.http_request("GET", url, headers=headers)
+        if response["ok"]:
+            return json.loads(response["body"])
+        raise RuntimeError(f"Failed to fetch JSON: {response['body']}")
+    
+    # ============ Data Format Conversion ============
+    
+    def to_json(self, obj: Any) -> str:
+        """Convert Nexus object to JSON"""
+        return json.dumps(obj)
+    
+    def from_json(self, json_str: str) -> Any:
+        """Parse JSON to Python object"""
+        return json.loads(json_str)
+    
+    def to_dict(self, nexus_pool: Dict[str, Any]) -> Dict:
+        """Convert Nexus pool to Python dict"""
+        return dict(nexus_pool)
+    
+    def from_dict(self, python_dict: Dict) -> Dict[str, Any]:
+        """Convert Python dict to Nexus pool"""
+        return dict(python_dict)
+    
+    # ============ Function Exports ============
     
     def export_nexus_function(self, name: str, func: Callable):
         """Export a Nexus function for external use"""
         self.exports[name] = func
     
-    def to_json(self, obj: Any) -> str:
-        """Convert Nexus object to JSON"""
-        if isinstance(obj, dict):
-            return json.dumps(obj)
-        elif isinstance(obj, (list, tuple)):
-            return json.dumps(list(obj))
-        elif isinstance(obj, (int, float, str, bool)):
-            return json.dumps(obj)
-        else:
-            return json.dumps(str(obj))
-    
-    def from_json(self, json_str: str) -> Any:
-        """Parse JSON to Python object"""
-        return json.loads(json_str)
+    def get_export(self, name: str) -> Callable:
+        """Get an exported function"""
+        if name not in self.exports:
+            raise KeyError(f"Export '{name}' not found")
+        return self.exports[name]
 
 
 class NexusFFI:

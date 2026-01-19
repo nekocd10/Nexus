@@ -6,9 +6,12 @@ Not JavaScript despite the name
 
 import json
 import sqlite3
+import os
 import re
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
+from pathlib import Path
+
 
 @dataclass
 class NxsjsRoute:
@@ -16,6 +19,143 @@ class NxsjsRoute:
     path: str
     handler: str
     middleware: List[str]
+
+
+class NxsjsDatabase:
+    """Database abstraction for Nexus"""
+    
+    def __init__(self, db_path: str = "nexus.db"):
+        self.db_path = db_path
+        self.conn = sqlite3.connect(db_path)
+        self.cursor = self.conn.cursor()
+    
+    def execute(self, query: str, params: tuple = ()) -> List[Dict]:
+        """Execute a query"""
+        try:
+            self.cursor.execute(query, params)
+            rows = self.cursor.fetchall()
+            
+            if self.cursor.description:
+                columns = [desc[0] for desc in self.cursor.description]
+                return [dict(zip(columns, row)) for row in rows]
+            
+            self.conn.commit()
+            return []
+        except Exception as e:
+            self.conn.rollback()
+            raise RuntimeError(f"Database error: {e}")
+    
+    def create_table_from_model(self, model_name: str, fields: Dict[str, str]):
+        """Create a table from a model definition"""
+        column_defs = []
+        for field_name, field_type in fields.items():
+            sql_type = self._nexus_type_to_sql(field_type)
+            column_defs.append(f"{field_name} {sql_type}")
+        
+        query = f"CREATE TABLE IF NOT EXISTS {model_name} ({', '.join(column_defs)})"
+        self.execute(query)
+    
+    def _nexus_type_to_sql(self, nexus_type: str) -> str:
+        """Convert Nexus type to SQL type"""
+        type_map = {
+            "string": "TEXT",
+            "number": "REAL",
+            "integer": "INTEGER",
+            "boolean": "BOOLEAN",
+            "datetime": "DATETIME",
+            "date": "DATE",
+            "time": "TIME",
+            "blob": "BLOB",
+            "text": "TEXT"
+        }
+        return type_map.get(nexus_type.lower(), "TEXT")
+    
+    def close(self):
+        """Close database connection"""
+        self.conn.close()
+
+
+class NxsjsFileSystem:
+    """File system operations for Nexus backend"""
+    
+    @staticmethod
+    def read_file(path: str) -> str:
+        """Read a file"""
+        try:
+            with open(path, 'r') as f:
+                return f.read()
+        except Exception as e:
+            raise RuntimeError(f"Cannot read file: {e}")
+    
+    @staticmethod
+    def write_file(path: str, content: str, append: bool = False):
+        """Write to a file"""
+        try:
+            mode = 'a' if append else 'w'
+            with open(path, mode) as f:
+                f.write(content)
+        except Exception as e:
+            raise RuntimeError(f"Cannot write file: {e}")
+    
+    @staticmethod
+    def delete_file(path: str):
+        """Delete a file"""
+        try:
+            Path(path).unlink()
+        except Exception as e:
+            raise RuntimeError(f"Cannot delete file: {e}")
+    
+    @staticmethod
+    def read_directory(path: str) -> List[Dict[str, Any]]:
+        """List directory contents"""
+        try:
+            items = []
+            for item in Path(path).iterdir():
+                items.append({
+                    "name": item.name,
+                    "path": str(item),
+                    "is_dir": item.is_dir(),
+                    "size": item.stat().st_size if item.is_file() else None
+                })
+            return items
+        except Exception as e:
+            raise RuntimeError(f"Cannot read directory: {e}")
+    
+    @staticmethod
+    def create_directory(path: str):
+        """Create a directory"""
+        try:
+            Path(path).mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            raise RuntimeError(f"Cannot create directory: {e}")
+    
+    @staticmethod
+    def file_exists(path: str) -> bool:
+        """Check if file exists"""
+        return Path(path).exists()
+
+
+class NexusAPI:
+    """HTTP API support for backends"""
+    
+    @staticmethod
+    def json_response(data: Any, status: int = 200) -> Dict[str, Any]:
+        """Create a JSON response"""
+        return {
+            "status": status,
+            "body": data,
+            "headers": {"Content-Type": "application/json"}
+        }
+    
+    @staticmethod
+    def error_response(message: str, status: int = 400) -> Dict[str, Any]:
+        """Create an error response"""
+        return {
+            "status": status,
+            "body": {"error": message},
+            "headers": {"Content-Type": "application/json"}
+        }
+
 
 class NxsjsParser:
     def __init__(self, source: str):

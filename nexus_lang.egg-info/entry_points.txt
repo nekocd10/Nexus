@@ -1,0 +1,3 @@
+[console_scripts]
+nexus = nexus_cli:main
+nxs = nxs_pm:main

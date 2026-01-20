@@ -112,11 +112,15 @@ detect_distro() {
 install_python_if_needed() {
     if command -v python3 &> /dev/null; then
         PYTHON_CMD="python3"
+        PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | cut -d' ' -f2)
+        print_success "Python version: $PYTHON_VERSION"
         return 0
     fi
     
     if command -v python &> /dev/null; then
         PYTHON_CMD="python"
+        PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | cut -d' ' -f2)
+        print_success "Python version: $PYTHON_VERSION"
         return 0
     fi
     
@@ -125,65 +129,93 @@ install_python_if_needed() {
     
     DISTRO=$(detect_distro)
     
+    # Determine if we need sudo
+    SUDO=""
+    if [ "$EUID" -ne 0 ] 2>/dev/null; then
+        if command -v sudo &> /dev/null; then
+            SUDO="sudo"
+        fi
+    fi
+    
     if [ "$PLATFORM" = "termux" ]; then
         print_info "Installing Python via pkg (Termux)..."
-        pkg install -y python 2>/dev/null || {
-            print_error "Failed to install Python on Termux"
-            exit 1
+        pkg install -y python 2>/dev/null && {
+            print_success "Python installed successfully"
+            if command -v python3 &> /dev/null; then
+                PYTHON_CMD="python3"
+            else
+                PYTHON_CMD="python"
+            fi
+            PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | cut -d' ' -f2)
+            print_success "Python version: $PYTHON_VERSION"
+            return 0
         }
+        print_error "Failed to install Python on Termux"
+        return 1
     elif [ "$DISTRO" = "alpine" ]; then
         print_info "Installing Python via apk (Alpine)..."
-        apk add --no-cache python3 py3-pip 2>/dev/null || {
-            print_error "Failed to install Python on Alpine. Try manually: apk add --no-cache python3 py3-pip"
-            exit 1
+        $SUDO apk add --no-cache python3 py3-pip 2>/dev/null && {
+            print_success "Python installed successfully"
+            PYTHON_CMD="python3"
+            PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | cut -d' ' -f2)
+            print_success "Python version: $PYTHON_VERSION"
+            return 0
         }
+        print_error "Failed to install Python on Alpine"
+        return 1
     elif [ "$DISTRO" = "debian" ] || [ "$DISTRO" = "ubuntu" ]; then
         print_info "Installing Python via apt (Debian/Ubuntu)..."
-        apt-get update 2>/dev/null && apt-get install -y python3 python3-pip 2>/dev/null || {
-            print_error "Failed to install Python on Debian/Ubuntu. Try manually: apt-get install -y python3 python3-pip"
-            exit 1
+        $SUDO apt-get update 2>/dev/null && $SUDO apt-get install -y python3 python3-pip 2>/dev/null && {
+            print_success "Python installed successfully"
+            PYTHON_CMD="python3"
+            PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | cut -d' ' -f2)
+            print_success "Python version: $PYTHON_VERSION"
+            return 0
         }
+        print_error "Failed to install Python on Debian/Ubuntu"
+        return 1
     elif [ "$DISTRO" = "fedora" ] || [ "$DISTRO" = "rhel" ] || [ "$DISTRO" = "centos" ]; then
         print_info "Installing Python via dnf (Fedora/RHEL/CentOS)..."
-        dnf install -y python3 python3-pip 2>/dev/null || {
-            print_error "Failed to install Python on Fedora/RHEL/CentOS. Try manually: dnf install -y python3 python3-pip"
-            exit 1
+        $SUDO dnf install -y python3 python3-pip 2>/dev/null && {
+            print_success "Python installed successfully"
+            PYTHON_CMD="python3"
+            PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | cut -d' ' -f2)
+            print_success "Python version: $PYTHON_VERSION"
+            return 0
         }
+        print_error "Failed to install Python on Fedora/RHEL/CentOS"
+        return 1
     elif [ "$DISTRO" = "arch" ]; then
         print_info "Installing Python via pacman (Arch)..."
-        pacman -S --noconfirm python python-pip 2>/dev/null || {
-            print_error "Failed to install Python on Arch. Try manually: pacman -S python python-pip"
-            exit 1
+        $SUDO pacman -S --noconfirm python python-pip 2>/dev/null && {
+            print_success "Python installed successfully"
+            PYTHON_CMD="python3"
+            PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | cut -d' ' -f2)
+            print_success "Python version: $PYTHON_VERSION"
+            return 0
         }
+        print_error "Failed to install Python on Arch"
+        return 1
     elif [ "$DISTRO" = "opensuse" ] || [ "$DISTRO" = "opensuse-leap" ]; then
         print_info "Installing Python via zypper (openSUSE)..."
-        zypper install -y python3 python3-pip 2>/dev/null || {
-            print_error "Failed to install Python on openSUSE. Try manually: zypper install -y python3 python3-pip"
-            exit 1
+        $SUDO zypper install -y python3 python3-pip 2>/dev/null && {
+            print_success "Python installed successfully"
+            PYTHON_CMD="python3"
+            PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | cut -d' ' -f2)
+            print_success "Python version: $PYTHON_VERSION"
+            return 0
         }
+        print_error "Failed to install Python on openSUSE"
+        return 1
     else
         print_error "Could not detect your Linux distribution"
         echo "Please install Python 3.8 or higher manually and try again"
-        exit 1
-    fi
-    
-    # Verify installation worked
-    if command -v python3 &> /dev/null; then
-        PYTHON_CMD="python3"
-        print_success "Python installed successfully"
-        return 0
-    elif command -v python &> /dev/null; then
-        PYTHON_CMD="python"
-        print_success "Python installed successfully"
-        return 0
-    else
-        print_error "Python installation failed"
-        exit 1
+        return 1
     fi
 }
 
-# Check Python installation
-install_python_if_needed
+# Check and install Python if needed
+install_python_if_needed || exit 1
 
 PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | cut -d' ' -f2)
 print_success "Python version: $PYTHON_VERSION"
@@ -253,16 +285,23 @@ print_info "Installing Nexus package..."
 # Verify pip is available
 if ! $PYTHON_CMD -m pip --version &> /dev/null; then
     print_warning "pip not found, attempting to install it..."
+    SUDO=""
+    if [ "$EUID" -ne 0 ] 2>/dev/null; then
+        if command -v sudo &> /dev/null; then
+            SUDO="sudo"
+        fi
+    fi
+    
     if command -v apt-get &> /dev/null; then
-        apt-get install -y python3-pip 2>/dev/null || true
+        $SUDO apt-get install -y python3-pip 2>/dev/null || true
     elif command -v dnf &> /dev/null; then
-        dnf install -y python3-pip 2>/dev/null || true
+        $SUDO dnf install -y python3-pip 2>/dev/null || true
     elif command -v pacman &> /dev/null; then
-        pacman -S --noconfirm python-pip 2>/dev/null || true
+        $SUDO pacman -S --noconfirm python-pip 2>/dev/null || true
     elif command -v apk &> /dev/null; then
-        apk add --no-cache py3-pip 2>/dev/null || true
+        $SUDO apk add --no-cache py3-pip 2>/dev/null || true
     elif command -v zypper &> /dev/null; then
-        zypper install -y python3-pip 2>/dev/null || true
+        $SUDO zypper install -y python3-pip 2>/dev/null || true
     fi
     
     if ! $PYTHON_CMD -m pip --version &> /dev/null; then
@@ -271,22 +310,25 @@ if ! $PYTHON_CMD -m pip --version &> /dev/null; then
     fi
 fi
 
-# Try standard installation
-if $PYTHON_CMD -m pip install -e . 2>&1 | grep -q "Successfully installed"; then
+print_info "Attempting installation method 1: standard install..."
+INSTALL_OUTPUT=$($PYTHON_CMD -m pip install -e . 2>&1)
+if echo "$INSTALL_OUTPUT" | grep -q "Successfully installed\|Requirement already satisfied"; then
     print_success "Package installed to Python environment"
 else
-    # Try with --user flag
-    print_info "Retrying with --user flag..."
-    if $PYTHON_CMD -m pip install --user -e . 2>&1 | grep -q "Successfully installed"; then
+    print_info "Method 1 failed, trying method 2: --user flag..."
+    INSTALL_OUTPUT=$($PYTHON_CMD -m pip install --user -e . 2>&1)
+    if echo "$INSTALL_OUTPUT" | grep -q "Successfully installed\|Requirement already satisfied"; then
         print_success "Package installed to Python environment (--user)"
     else
-        # Try without editable mode
-        print_info "Retrying without editable mode..."
-        if $PYTHON_CMD -m pip install --user . 2>&1 | grep -q "Successfully installed"; then
+        print_info "Method 2 failed, trying method 3: non-editable install..."
+        INSTALL_OUTPUT=$($PYTHON_CMD -m pip install --user . 2>&1)
+        if echo "$INSTALL_OUTPUT" | grep -q "Successfully installed\|Requirement already satisfied"; then
             print_success "Package installed to Python environment"
         else
-            print_error "Failed to install package with pip. Try manually:"
-            echo "  $PYTHON_CMD -m pip install --user ."
+            print_error "Failed to install package"
+            echo ""
+            echo "Error details:"
+            echo "$INSTALL_OUTPUT"
             exit 1
         fi
     fi

@@ -22,19 +22,7 @@ setup(
     url="https://github.com/nekocd10/Nexus",
     license="MIT",
     
-    packages=find_packages(include=["src", "nxs_modules"]),
-    py_modules=[
-        "src.cli",
-        "src.interpreter",
-        "src.lexer",
-        "src.parser",
-        "src.package_manager",
-        "src.frontend",
-        "src.backend",
-        "src.build",
-        "src.interop",
-        "src.bundler"
-    ],
+    packages=find_packages(include=["src"]),
     
     entry_points={
         "console_scripts": [

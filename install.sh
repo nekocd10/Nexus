@@ -268,14 +268,30 @@ fi
 
 # Verify installation
 echo ""
-echo "Verifying installation..."
-if nexus --version &> /dev/null; then
-    print_success "Nexus CLI is available"
-    nexus --version
+print_info "Verifying installation..."
+
+# Get Python's bin directory
+PYTHON_BIN=$($PYTHON_CMD -c "import site; print(site.getusersitepackages().replace('site-packages', 'bin'))" 2>/dev/null)
+if [ -z "$PYTHON_BIN" ]; then
+    PYTHON_BIN=$($PYTHON_CMD -m site --user-base 2>/dev/null)/bin
+fi
+
+# Check if nexus is in PATH
+if command -v nexus &> /dev/null; then
+    print_success "✓ Nexus CLI is available in PATH"
+    NEXUS_PATH=$(which nexus)
+    print_info "Location: $NEXUS_PATH"
 else
-    print_warning "Nexus CLI not found in PATH"
-    echo "Please restart your terminal or run:"
-    echo "export PATH=\"\$PATH:\$($PYTHON_CMD -m site --user-base)/bin\""
+    print_warning "⚠ Nexus not found in PATH"
+    if [ -f "$PYTHON_BIN/nexus" ]; then
+        print_info "But it's installed at: $PYTHON_BIN/nexus"
+        echo ""
+        echo "Add this to your shell profile (~/.bashrc, ~/.zshrc, etc):"
+        echo "  export PATH=\"\$PATH:$PYTHON_BIN\""
+        echo ""
+        echo "Then restart terminal or run:"
+        echo "  source ~/.bashrc"
+    fi
 fi
 
 echo ""

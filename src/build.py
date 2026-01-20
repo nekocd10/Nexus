@@ -69,7 +69,7 @@ class NexusBuilder:
         print("✅ Build complete!")
     
     def build_frontend(self):
-        """Compile .nxs frontend files to JavaScript, output as .nxs file"""
+        """Compile .nsk frontend files to JavaScript, output as .nsk file"""
         print("  📦 Compiling frontend...")
         
         entry = self.config.config.get("entry", {}).get("frontend")
@@ -80,8 +80,8 @@ class NexusBuilder:
         try:
             from src.frontend import NxsCompiler
             compiler = NxsCompiler(entry)
-            # Output as .nxs file for custom browser parser to load directly
-            output = self.config.config.get("output", {}).get("frontend", "dist/index.nxs")
+            # Output as .nsk file for custom browser parser to load directly
+            output = self.config.config.get("output", {}).get("frontend", "dist/index.nsk")
             compiler.write_output(output)
             print(f"    ✓ Compiled {entry} -> {output}")
         except Exception as e:
@@ -312,15 +312,10 @@ class NexusDevServer:
                                     content = f.read()
                                 
                                 # Interpret .nxs file to get HTML/JS
-                                from src.lexer import NexusLexer
-                                from src.parser import NexusParser
+                                from frontend import NxsParser
                                 
-                                lexer = NexusLexer(content)
-                                tokens = lexer.tokenize()
-                                parser = NexusParser(tokens)
-                                ast = parser.parse()
-                                interpreter = NexusInterpreter()
-                                result = interpreter.interpret(ast)
+                                parser = NxsParser(content)
+                                result = parser.parse()
                                 
                                 self.send_response(200)
                                 self.send_header("Content-type", "text/html")
@@ -485,7 +480,6 @@ def init_project():
 function handleClick() {
     alert('Hello from Nexus!');
 }
-</script>
 """)
     
     # Create sample backend

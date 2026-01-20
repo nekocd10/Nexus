@@ -1,0 +1,14 @@
+<view class="app">
+    <h1>Welcome to Nexus</h1>
+    
+    <card>
+        <h2>Hello World</h2>
+        <input type="text" placeholder="Enter your name" @bind="name" />
+        <btn @click="handleClick()">Click Me</btn>
+    </card>
+</view>
+
+<script>
+function handleClick() {
+    alert('Hello from Nexus!');
+}

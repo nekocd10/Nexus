@@ -1,7 +1,14 @@
 {
-  "dependencies": {
-    "react": "*",
-    "lodash": "*"
+  "name": "nexus-app",
+  "version": "1.0.0",
+  "entry": {
+    "frontend": "src/index.nxs",
+    "backend": "src/api.nxsjs"
   },
+  "output": {
+    "frontend": "dist/index.html",
+    "backend": "dist/app.py"
+  },
+  "dependencies": {},
   "devDependencies": {}
 }

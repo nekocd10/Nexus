@@ -1,0 +1,22 @@
+@config {
+    port: 5000,
+    database: 'nexus.db'
+}
+
+@model User {
+    name: string,
+    email: string,
+    created: datetime
+}
+
+@route GET "/api/users" {
+    return "SELECT * FROM users"
+}
+
+@route POST "/api/users" @auth {
+    return "INSERT INTO users (name, email) VALUES (?, ?)"
+}
+
+@middleware auth {
+    print("Checking authentication")
+}

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3it needs to fetch every file that is in the dist directory but only load it if it is the root page thingy or if the main or any sup .nxsjs files make it load however it does that
 """
 Nexus CLI - Unified command-line interface for the Nexus ecosystem
 Manages: language, package manager, frontend, backend, building, and deployment
@@ -117,7 +117,7 @@ class NexusCLI:
                 "backend": "src/api.nxsjs"
             },
             "output": {
-                "frontend": "dist/index.html",
+                "frontend": "dist/index.nxs",
                 "backend": "dist/app.py"
             },
             "dependencies": {},

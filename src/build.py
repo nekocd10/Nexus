@@ -29,7 +29,7 @@ class NexusBuildConfig:
                 "backend": "src/api.nxsjs"
             },
             "output": {
-                "frontend": "dist/index.html",
+                "frontend": "dist/index.nxs",
                 "backend": "dist/app.py"
             },
             "dependencies": {},
@@ -80,7 +80,7 @@ class NexusBuilder:
         try:
             from src.frontend import NxsCompiler
             compiler = NxsCompiler(entry)
-            # Output as .nxs file with JavaScript content inside
+            # Output as .nxs file for custom browser parser to load directly
             output = self.config.config.get("output", {}).get("frontend", "dist/index.nxs")
             compiler.write_output(output)
             print(f"    ✓ Compiled {entry} -> {output}")
@@ -109,11 +109,178 @@ class NexusBuilder:
             print(f"    ❌ Backend build failed: {e}")
     
     def copy_assets(self):
-        """Copy static assets"""
+        """Copy static assets and runtime files"""
+        # Copy Nexus runtime
+        print("  📋 Copying Nexus runtime...")
+        
+        # Try to find nexus-runtime.js from the Nexus installation
+        import os
+        nexus_package_dir = os.path.dirname(os.path.abspath(__file__))
+        runtime_src = Path(nexus_package_dir) / "nexus-runtime.js"
+        
+        if not runtime_src.exists():
+            # Fallback: look in src/ relative to current dir
+            runtime_src = Path("src/nexus-runtime.js")
+        
+        if runtime_src.exists():
+            shutil.copy(runtime_src, self.dist_dir / "nexus-runtime.js")
+            print(f"    ✓ Copied nexus-runtime.js")
+        else:
+            print(f"    ⚠️  nexus-runtime.js not found at {runtime_src}")
+        
+        # Generate minimal index.html loader (stays in place)
+        print("  📋 Generating HTML loader...")
+        self.generate_loader_html()
+        
+        # Copy assets if present
         assets_dir = self.src_dir / "assets"
         if assets_dir.exists():
-            print("  📋 Copying assets...")
+            print("  📋 Copying static assets...")
             shutil.copytree(assets_dir, self.dist_dir / "assets", dirs_exist_ok=True)
+    
+    def generate_loader_html(self):
+        """Generate minimal HTML that loads and renders .nxs files"""
+        loader_html = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .nxs-view { display: flex; flex-direction: column; gap: 10px; }
+        .nxs-card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: 8px 0; }
+        .nxs-btn { background: #007AFF; color: white; border: none; border-radius: 6px; padding: 10px 20px; cursor: pointer; font-size: 16px; transition: background 0.2s; }
+        .nxs-btn:hover { background: #0051D5; }
+        .nxs-input { border: 1px solid #ddd; border-radius: 6px; padding: 8px 12px; font-size: 16px; width: 100%; }
+        .nxs-input:focus { outline: none; border-color: #007AFF; box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
+        .nxs-text { font-size: 16px; color: #333; line-height: 1.5; }
+        .nxs-heading { font-size: 24px; font-weight: 600; color: #000; margin: 16px 0 8px 0; }
+        .nxs-subheading { font-size: 18px; font-weight: 500; color: #333; margin: 12px 0 4px 0; }
+        .nxs-error { background: #fee; color: #c33; padding: 12px; border-radius: 6px; margin: 10px 0; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-word; max-height: 400px; overflow-y: auto; }
+        .nxs-loading { text-align: center; padding: 40px 20px; color: #666; }
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #007AFF; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .debug-info { font-size: 12px; color: #666; margin-top: 20px; padding: 10px; background: #f9f9f9; border-radius: 4px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="nxs-loading">
+            <div class="spinner"></div>
+            <p>Loading Nexus application...</p>
+            <div class="debug-info" id="debug"></div>
+        </div>
+    </div>
+
+    <script src="nexus-runtime.js"><\/script>
+    <script>
+        const debugEl = document.getElementById('debug');
+        const log = (msg) => {
+            console.log(msg);
+            debugEl.innerHTML += msg + '\n';
+        };
+
+        (async function init() {
+            try {
+                log('[1/5] Checking if NexusRuntime is available...');
+                if (typeof NexusRuntime === 'undefined') {
+                    throw new Error('NexusRuntime class not loaded');
+                }
+                log('[1/5] ✓ NexusRuntime available');
+                
+                log('[2/5] Initializing Nexus runtime...');
+                const runtime = new NexusRuntime();
+                log('[2/5] ✓ Runtime initialized');
+                
+                log('[3/5] Loading index.nxs file...');
+                await runtime.load('index.nxs');
+                log('[3/5] ✓ Loaded ' + runtime.source.length + ' bytes');
+                
+                log('[4/5] Parsing Nexus code...');
+                if (!runtime.ast) {
+                    throw new Error('AST is null after parsing');
+                }
+                log('[4/5] ✓ Parsed ' + runtime.ast.body.length + ' statements');
+                
+                log('[5/5] Executing code and rendering...');
+                runtime.execute();
+                log('[5/5] ✓ Executed successfully');
+                
+                log('');
+                log('✅ Application loaded and running!');
+                log('State: ' + JSON.stringify(runtime.state, null, 2));
+                log('Components: ' + runtime.components.length);
+                log('Functions: ' + Object.keys(runtime.functions).join(', '));
+                
+                window.nexusRuntime = runtime;
+                window.nxsDebug = {
+                    state: () => runtime.state,
+                    functions: () => Object.keys(runtime.functions),
+                    components: () => runtime.components.length,
+                    load: (file) => runtime.load(file),
+                    execute: () => runtime.execute(),
+                    reload: async () => { await runtime.load('index.nxs'); runtime.execute(); }
+                };
+                
+                // Keep debug visible for inspection
+            } catch (error) {
+                console.error('ERROR:', error);
+                console.error('Stack:', error.stack);
+                log('');
+                log('❌ ERROR: ' + error.message);
+                log('');
+                log('Stack Trace:');
+                log(error.stack || 'No stack trace');
+                
+                const errorHtml = `
+                    <div class="nxs-loading">
+                        <div style="text-align: left; background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #ffc107;">
+                            <h2 style="color: #856404; margin-bottom: 10px;">⚠️ Application Error</h2>
+                            <div class="nxs-error">${escapeHtml(error.message)}
+
+Stack:
+${escapeHtml(error.stack || 'No stack trace')}</div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('app').innerHTML = errorHtml;
+            }
+        })();
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    <\/script>
+</body>
+</html>"""
+        
+        index_path = self.dist_dir / "index.html"
+        with open(index_path, 'w') as f:
+            f.write(loader_html)
+        print(f"    ✓ Generated {index_path}")
 
 
 class NexusDevServer:

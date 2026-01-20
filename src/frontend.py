@@ -303,9 +303,15 @@ class NxsCompiler:
     
     def write_output(self, output_path: str):
         """Write compiled output"""
-        html = self.compile()
-        with open(output_path, 'w') as f:
-            f.write(html)
+        # If output is .nxs, write source as-is for browser runtime
+        if output_path.endswith('.nxs'):
+            with open(output_path, 'w') as f:
+                f.write(self.source)
+        else:
+            # Otherwise compile to HTML
+            html = self.compile()
+            with open(output_path, 'w') as f:
+                f.write(html)
         print(f"✓ Compiled {self.filepath} -> {output_path}")
 
 
@@ -316,7 +322,7 @@ if __name__ == "__main__":
         sys.exit(1)
     
     input_file = sys.argv[1]
-    output_file = sys.argv[2] if len(sys.argv) > 2 else input_file.replace('.nxs', '.html')
+    output_file = sys.argv[2] if len(sys.argv) > 2 else input_file.replace('.nxs', '.nxs')
     
     compiler = NxsCompiler(input_file)
     compiler.write_output(output_file)

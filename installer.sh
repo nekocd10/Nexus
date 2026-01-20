@@ -311,26 +311,20 @@ if ! $PYTHON_CMD -m pip --version &> /dev/null; then
 fi
 
 print_info "Attempting installation method 1: standard install..."
-INSTALL_OUTPUT=$($PYTHON_CMD -m pip install -e . 2>&1)
+INSTALL_OUTPUT=$($PYTHON_CMD -m pip install . 2>&1)
 if echo "$INSTALL_OUTPUT" | grep -q "Successfully installed\|Requirement already satisfied"; then
     print_success "Package installed to Python environment"
 else
     print_info "Method 1 failed, trying method 2: --user flag..."
-    INSTALL_OUTPUT=$($PYTHON_CMD -m pip install --user -e . 2>&1)
+    INSTALL_OUTPUT=$($PYTHON_CMD -m pip install --user . 2>&1)
     if echo "$INSTALL_OUTPUT" | grep -q "Successfully installed\|Requirement already satisfied"; then
         print_success "Package installed to Python environment (--user)"
     else
-        print_info "Method 2 failed, trying method 3: non-editable install..."
-        INSTALL_OUTPUT=$($PYTHON_CMD -m pip install --user . 2>&1)
-        if echo "$INSTALL_OUTPUT" | grep -q "Successfully installed\|Requirement already satisfied"; then
-            print_success "Package installed to Python environment"
-        else
-            print_error "Failed to install package"
-            echo ""
-            echo "Error details:"
-            echo "$INSTALL_OUTPUT"
-            exit 1
-        fi
+        print_error "Failed to install package"
+        echo ""
+        echo "Error details:"
+        echo "$INSTALL_OUTPUT"
+        exit 1
     fi
 fi
 

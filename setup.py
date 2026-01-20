@@ -22,7 +22,7 @@ setup(
     url="https://github.com/nekocd10/Nexus",
     license="MIT",
     
-    packages=find_packages(include=["src"]),
+    packages=['src'],
     
     entry_points={
         "console_scripts": [

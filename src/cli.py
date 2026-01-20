@@ -272,7 +272,7 @@ class NexusCLI:
         print("🏗️  Building project...")
         
         try:
-            from nxs_build import NexusBuilder, NexusBuildConfig
+            from src.build import NexusBuilder, NexusBuildConfig
             config = NexusBuildConfig(config_file)
             builder = NexusBuilder(config)
             builder.build()
@@ -292,7 +292,7 @@ class NexusCLI:
         port = int(args[0]) if args else 5000
         
         try:
-            from nxs_build import NexusBuilder, NexusBuildConfig, NexusDevServer
+            from src.build import NexusBuilder, NexusBuildConfig, NexusDevServer
             config = NexusBuildConfig(config_file)
             builder = NexusBuilder(config)
             builder.build()
@@ -314,7 +314,7 @@ class NexusCLI:
         print(f"🚀 Deploying to {environment}...")
         
         try:
-            from nxs_build import NexusBuilder, NexusBuildConfig
+            from src.build import NexusBuilder, NexusBuildConfig
             config = NexusBuildConfig("nxs.json")
             builder = NexusBuilder(config)
             builder.build()

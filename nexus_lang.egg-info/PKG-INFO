@@ -6,9 +6,9 @@ Home-page: https://github.com/nekocd10/Nexus
 Author: Nexus Community
 Author-email: dev@nexus-lang.dev
 License: MIT
-Project-URL: Documentation, https://github.com/nekocd10/maybe-a-custom-language/blob/main/README.md
-Project-URL: Source, https://github.com/nekocd10/maybe-a-custom-language
-Project-URL: Tracker, https://github.com/nekocd10/maybe-a-custom-language/issues
+Project-URL: Documentation, https://github.com/nekocd10/Nexus/blob/main/README.md
+Project-URL: Source, https://github.com/nekocd10/Nexus
+Project-URL: Tracker, https://github.com/nekocd10/Nexus/issues
 Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers
 Classifier: License :: OSI Approved :: MIT License
@@ -453,4 +453,6 @@ This is a complete language implementation. Feel free to:
 
 ## License
 
-MIT
+MIT# Dummy commit to force GitHub update
+# Another dummy
+# Force raw update

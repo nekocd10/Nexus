@@ -84,6 +84,8 @@ class NxsParser:
         """Support standard HTML syntax"""
         # HTML is kept as-is, just pass through
         return source
+    
+    def compile_custom_tags(self, source: str) -> str:
         """Convert custom tags to HTML"""
         result = source
         

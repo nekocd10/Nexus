@@ -56,8 +56,8 @@ setup(
     python_requires=">=3.8",
     
     project_urls={
-        "Documentation": "https://github.com/nekocd10/maybe-a-custom-language/blob/main/README.md",
-        "Source": "https://github.com/nekocd10/maybe-a-custom-language",
-        "Tracker": "https://github.com/nekocd10/maybe-a-custom-language/issues",
+        "Documentation": "https://github.com/nekocd10/Nexus/blob/main/README.md",
+        "Source": "https://github.com/nekocd10/Nexus",
+        "Tracker": "https://github.com/nekocd10/Nexus/issues",
     },
 )

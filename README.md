@@ -10,6 +10,32 @@ Works on **all devices**: Linux, macOS, Windows, Termux, 32-bit, 64-bit, ARM, an
 bash <(curl -sL https://github.com/nekocd10/Nexus/raw/main/installer.sh)
 ```
 
+### Platform-specific one-liners
+
+If you prefer an explicit one-liner for your platform, use one of the following.
+
+```bash
+# macOS (Intel / Apple Silicon)
+/bin/bash -c "$(curl -sL https://github.com/nekocd10/Nexus/raw/main/installer.sh)"
+
+# Termux (Android)
+pkg install python curl -y
+bash <(curl -sL https://github.com/nekocd10/Nexus/raw/main/installer.sh)
+
+# Windows (recommended: WSL or Git Bash)
+# Using WSL (runs the installer inside WSL):
+wsl bash -c "bash <(curl -sL https://github.com/nekocd10/Nexus/raw/main/installer.sh)"
+
+# Alternatively on Windows (PowerShell + Git Bash):
+Invoke-WebRequest -Uri https://github.com/nekocd10/Nexus/raw/main/installer.sh -OutFile installer.sh; bash installer.sh
+```
+
+<!-- Native PowerShell installer -->
+```powershell
+# Native Windows (PowerShell) - runs a native PowerShell installer
+powershell -NoProfile -ExecutionPolicy Bypass -Command "& { iwr https://raw.githubusercontent.com/nekocd10/Nexus/main/installer.ps1 -OutFile $env:TEMP\nexus_installer.ps1; & $env:TEMP\nexus_installer.ps1 }"
+```
+
 **What it does automatically:**
 - ✅ Detects your OS and architecture
 - ✅ Installs everything needed

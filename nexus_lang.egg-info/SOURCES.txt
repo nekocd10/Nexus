@@ -10,6 +10,7 @@ src/backend.py
 src/build.py
 src/bundler.py
 src/cli.py
+src/decorators.py
 src/frontend.py
 src/interop.py
 src/interpreter.py

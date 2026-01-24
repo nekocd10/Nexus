@@ -1,0 +1,108 @@
+// ============================================
+// EXAMPLE 1: Simple API Server with Routes
+// ============================================
+
+@config {
+    port: 5000,
+    host: "0.0.0.0",
+    database: "nexus.db",
+    environment: "production",
+    debug: false
+}
+
+@model User {
+    id: number,
+    name: string,
+    email: string,
+    created_at: date
+}
+
+@model Post {
+    id: number,
+    user_id: number,
+    title: string,
+    content: string,
+    created_at: date
+}
+
+@route GET "/api/users" {
+    query_users = database.query("SELECT * FROM users")
+    return { status: 200, data: query_users }
+}
+
+@route GET "/api/users/:id" {
+    user = database.query("SELECT * FROM users WHERE id = ?", :id)
+    return { status: 200, data: user }
+}
+
+@route POST "/api/users" @validate @auth {
+    new_user = {
+        name: request.body.name,
+        email: request.body.email
+    }
+    saved = database.insert("users", new_user)
+    return { status: 201, data: saved }
+}
+
+@route PUT "/api/users/:id" @auth {
+    user_data = request.body
+    updated = database.update("users", :id, user_data)
+    return { status: 200, data: updated }
+}
+
+@route DELETE "/api/users/:id" @auth @permission("admin") {
+    database.delete("users", :id)
+    return { status: 204 }
+}
+
+@route GET "/api/posts" @cache {
+    posts = database.query("SELECT * FROM posts")
+    return { status: 200, data: posts }
+}
+
+@route POST "/api/posts" @auth @rateLimit(100, 60000) {
+    post = {
+        user_id: request.user.id,
+        title: request.body.title,
+        content: request.body.content
+    }
+    saved = database.insert("posts", post)
+    return { status: 201, data: saved }
+}
+
+@middleware auth {
+    token = request.headers["authorization"]
+    if !token {
+        return { error: "Unauthorized" }
+    }
+    request.user = verify_token(token)
+}
+
+@middleware errorHandler {
+    try {
+        next()
+    } catch error {
+        return { status: 500, error: error.message }
+    }
+}
+
+@task sendWelcomeEmail {
+    cron: "0 * * * *",
+    queue: "emails",
+    retry: 3,
+    timeout: 30000
+    
+    new_users = database.query("SELECT * FROM users WHERE welcomed = false")
+    for user in new_users {
+        send_email(user.email, "Welcome to Nexus!")
+        database.update("users", user.id, { welcomed: true })
+    }
+}
+
+@health {
+    database_ok = database.ping()
+    return {
+        status: database_ok ? "healthy" : "unhealthy",
+        database: database_ok
+    }
+}

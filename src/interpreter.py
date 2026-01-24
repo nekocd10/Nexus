@@ -4,6 +4,12 @@ Executes Nexus AST
 """
 
 from src.parser import *
+from src.decorators import (
+    DecoratorConfig, DecoratorType, BackendRegistry, 
+    BackendRoute, BackendModel, BackendMiddleware, 
+    BackendService, BackendTask, BackendConfig,
+    get_backend_registry
+)
 from typing import Any, Dict, List, Optional
 import sys
 
@@ -152,6 +158,12 @@ class NexusInterpreter:
                 self.env.set(node.target.name, value)
             return value
         
+        elif isinstance(node, DecoratorNode):
+            return self.visit_decorator(node)
+        
+        elif isinstance(node, BackendFile):
+            return self.visit_backend_file(node)
+        
         elif isinstance(node, ContextDef):
             context = NexusContext(node.name, node.inputs, node.outputs, node.body, self.env)
             self.contexts[node.name] = context
@@ -252,6 +264,18 @@ class NexusInterpreter:
         # Other flows
         return self.visit(node.right)
     
+    def visit_decorator(self, node: DecoratorNode) -> Any:
+        """Visit a decorator node"""
+        # For now, just register it in the backend registry
+        registry = get_backend_registry()
+        registry.register_decorator(node.decorator)
+        return node.decorator
+    
+    def visit_backend_file(self, node: BackendFile) -> BackendRegistry:
+        """Visit a backend file node"""
+        backend_interpreter = BackendInterpreter()
+        return backend_interpreter.interpret_backend_file(node)
+    
     def is_truthy(self, value: Any) -> bool:
         if value is None or value is False:
             return False
@@ -266,6 +290,59 @@ def run_nexus(source: str):
     interpreter = NexusInterpreter()
     return interpreter.interpret(ast)
 
+# Backend decorator handling
+class BackendInterpreter:
+    """Interprets .nxsjs backend files"""
+    
+    def __init__(self):
+        self.registry = get_backend_registry()
+    
+    def process_decorator_node(self, node: DecoratorNode):
+        """Process a single decorator node"""
+        decorator = node.decorator
+        
+        if decorator.type == DecoratorType.CONFIG:
+            config = BackendConfig(**decorator.kwargs)
+            self.registry.set_config(config)
+        
+        elif decorator.type == DecoratorType.MODEL:
+            name = decorator.args[0] if decorator.args else "Model"
+            fields = decorator.kwargs.get("fields", {})
+            model = BackendModel(name=name, fields=fields)
+            self.registry.register_model(model)
+        
+        elif decorator.type == DecoratorType.ROUTE:
+            method = decorator.args[0] if decorator.args else "GET"
+            path = decorator.args[1] if len(decorator.args) > 1 else "/"
+            route = BackendRoute(method=method, path=path)
+            self.registry.register_route(route)
+        
+        elif decorator.type == DecoratorType.MIDDLEWARE:
+            name = decorator.args[0] if decorator.args else "middleware"
+            middleware = BackendMiddleware(name=name, handler=name)
+            self.registry.register_middleware(middleware)
+        
+        elif decorator.type == DecoratorType.TASK:
+            name = decorator.args[0] if decorator.args else "task"
+            schedule = decorator.kwargs.get("schedule")
+            task = BackendTask(name=name, handler=name, schedule=schedule)
+            self.registry.register_task(task)
+        
+        elif decorator.type == DecoratorType.SERVICE:
+            name = decorator.args[0] if decorator.args else "Service"
+            service = BackendService(name=name)
+            self.registry.register_service(service)
+        
+        else:
+            # Register generic decorator
+            self.registry.register_decorator(decorator)
+    
+    def interpret_backend_file(self, node: BackendFile) -> BackendRegistry:
+        """Interpret a complete backend file"""
+        for decorator_node in node.decorators:
+            self.process_decorator_node(decorator_node)
+        
+        return self.registry
 
 if __name__ == '__main__':
     code = '''

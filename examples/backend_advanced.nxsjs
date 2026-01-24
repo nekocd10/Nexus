@@ -1,0 +1,254 @@
+// ============================================
+// EXAMPLE 2: Advanced Backend with Services
+// ============================================
+
+@config {
+    port: 3000,
+    database: "postgres://localhost/nexus_app",
+    redis: "redis://localhost:6379",
+    cors: true,
+    cors_origins: ["https://app.nexus.dev", "https://admin.nexus.dev"],
+    rate_limit_enabled: true,
+    rate_limit_requests: 1000,
+    rate_limit_window_ms: 60000
+}
+
+// USER SERVICE
+@service UserService {
+    @dependency database
+    @dependency emailService
+    
+    def create_user(name, email, password) {
+        hashed = hash_password(password)
+        user = {
+            name: name,
+            email: email,
+            password: hashed,
+            created_at: now()
+        }
+        saved = database.insert("users", user)
+        emailService.send_welcome_email(email, name)
+        return saved
+    }
+    
+    def get_user(id) {
+        return database.query("SELECT * FROM users WHERE id = ?", id)
+    }
+    
+    def update_user(id, data) {
+        return database.update("users", id, data)
+    }
+    
+    def delete_user(id) {
+        database.delete("users", id)
+        emailService.send_goodbye_email(id)
+    }
+}
+
+// EMAIL SERVICE
+@service EmailService {
+    @dependency smtp
+    
+    def send_welcome_email(email, name) {
+        template = load_template("welcome.html")
+        html = render_template(template, { name: name })
+        smtp.send({
+            to: email,
+            subject: "Welcome to Nexus!",
+            html: html
+        })
+    }
+    
+    def send_goodbye_email(email) {
+        smtp.send({
+            to: email,
+            subject: "We'll miss you!",
+            text: "Hope to see you again"
+        })
+    }
+}
+
+// PAYMENT SERVICE
+@service PaymentService {
+    @dependency stripe
+    @dependency database
+    
+    def process_payment(user_id, amount, currency) {
+        user = database.query("SELECT * FROM users WHERE id = ?", user_id)
+        
+        charge = stripe.create_charge({
+            customer: user.stripe_id,
+            amount: amount * 100,
+            currency: currency
+        })
+        
+        transaction = {
+            user_id: user_id,
+            amount: amount,
+            currency: currency,
+            stripe_id: charge.id,
+            status: "completed"
+        }
+        database.insert("transactions", transaction)
+        
+        return transaction
+    }
+}
+
+// MODELS
+@model User {
+    id: number @primary,
+    name: string,
+    email: string @unique,
+    password: string,
+    stripe_id: string,
+    created_at: date,
+    updated_at: date
+}
+
+@model Transaction {
+    id: number @primary,
+    user_id: number @foreign("users"),
+    amount: decimal,
+    currency: string,
+    stripe_id: string,
+    status: string,
+    created_at: date
+}
+
+@model Post {
+    id: number @primary,
+    user_id: number @foreign("users"),
+    title: string,
+    content: text,
+    published: boolean,
+    created_at: date,
+    updated_at: date
+}
+
+// ROUTES
+@route POST "/api/auth/register" @validate {
+    user = UserService.create_user(
+        request.body.name,
+        request.body.email,
+        request.body.password
+    )
+    token = generate_jwt(user.id)
+    return { status: 201, data: { user: user, token: token } }
+}
+
+@route POST "/api/auth/login" @validate @rateLimit(5, 900000) {
+    email = request.body.email
+    password = request.body.password
+    
+    user = database.query("SELECT * FROM users WHERE email = ?", email)
+    if !user {
+        return { status: 401, error: "Invalid credentials" }
+    }
+    
+    if !verify_password(password, user.password) {
+        return { status: 401, error: "Invalid credentials" }
+    }
+    
+    token = generate_jwt(user.id)
+    return { status: 200, data: { user: user, token: token } }
+}
+
+@route GET "/api/users/:id" @auth @cache(3600) {
+    user = UserService.get_user(:id)
+    if !user {
+        return { status: 404, error: "User not found" }
+    }
+    return { status: 200, data: user }
+}
+
+@route PUT "/api/users/:id" @auth @validate {
+    if request.user.id != :id && !request.user.is_admin {
+        return { status: 403, error: "Forbidden" }
+    }
+    
+    user = UserService.update_user(:id, request.body)
+    return { status: 200, data: user }
+}
+
+@route POST "/api/payments" @auth @permission("premium") {
+    transaction = PaymentService.process_payment(
+        request.user.id,
+        request.body.amount,
+        request.body.currency
+    )
+    return { status: 201, data: transaction }
+}
+
+@route GET "/api/payments/:id" @auth {
+    transaction = database.query(
+        "SELECT * FROM transactions WHERE id = ? AND user_id = ?",
+        :id,
+        request.user.id
+    )
+    if !transaction {
+        return { status: 404, error: "Transaction not found" }
+    }
+    return { status: 200, data: transaction }
+}
+
+// BACKGROUND JOBS
+@task ProcessPendingPayments {
+    cron: "*/5 * * * *",
+    queue: "payments",
+    retry: 5,
+    timeout: 120000
+    
+    pending = database.query(
+        "SELECT * FROM transactions WHERE status = 'pending'"
+    )
+    
+    for transaction in pending {
+        result = stripe.charge(transaction.stripe_id)
+        if result.success {
+            database.update("transactions", transaction.id, {
+                status: "completed"
+            })
+        }
+    }
+}
+
+@task CleanupExpiredSessions {
+    cron: "0 2 * * *",
+    queue: "maintenance",
+    timeout: 60000
+    
+    database.query(
+        "DELETE FROM sessions WHERE expires_at < NOW()"
+    )
+    println "Expired sessions cleaned up"
+}
+
+// HEALTH CHECKS
+@health {
+    db_ok = database.ping()
+    redis_ok = redis.ping()
+    stripe_ok = stripe.health_check()
+    
+    return {
+        status: (db_ok && redis_ok && stripe_ok) ? "healthy" : "degraded",
+        database: db_ok,
+        redis: redis_ok,
+        stripe: stripe_ok
+    }
+}
+
+// ERROR HANDLING
+@error {
+    log.error("Request error", {
+        path: request.path,
+        method: request.method,
+        error: error.message
+    })
+    
+    return {
+        status: 500,
+        error: "Internal server error",
+        timestamp: now()
+    }
+}

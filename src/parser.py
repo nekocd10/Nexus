@@ -6,6 +6,7 @@ Builds AST from Nexus tokens
 from dataclasses import dataclass
 from typing import List, Optional, Any
 from src.lexer import Token, TokenType, NexusLexer
+from src.decorators import DecoratorConfig, DecoratorType
 
 # AST Node types for Nexus
 @dataclass
@@ -72,6 +73,21 @@ class VarDeclaration(NexusNode):
 class Assignment(NexusNode):
     target: NexusNode
     value: NexusNode
+
+@dataclass
+class DecoratorNode(NexusNode):
+    decorator: DecoratorConfig
+    target: Optional[NexusNode] = None  # The thing being decorated
+
+@dataclass
+class BackendFile(NexusNode):
+    decorators: List[DecoratorNode]
+    config: Optional[DecoratorNode] = None
+    models: List[DecoratorNode] = None
+    routes: List[DecoratorNode] = None
+    middleware: List[DecoratorNode] = None
+    tasks: List[DecoratorNode] = None
+    services: List[DecoratorNode] = None
 
 class NexusParser:
     def __init__(self, tokens: List[Token]):

@@ -9,7 +9,8 @@ from pathlib import Path
 
 # Read README for long description
 readme_path = Path(__file__).parent / "README.md"
-long_description = readme_path.read_text() if readme_path.exists() else ""
+# Read README using UTF-8 to avoid platform encoding issues (Windows cp1252, etc.)
+long_description = readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
 
 setup(
     name="nexus-lang",

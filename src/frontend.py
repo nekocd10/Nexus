@@ -60,21 +60,21 @@ class NxsParser:
         # <%= expression %> - escaped output
         source = re.sub(
             r'<%=\s*([^%]*?)\s*%>',
-            lambda m: f'{{{{ {m.group(1)} }}}}',
+            lambda m: rf'{{{{ {m.group(1)} }}}}',
             source
         )
         
         # <%- expression %> - unescaped output
         source = re.sub(
             r'<%-\s*([^%]*?)\s*%>',
-            lambda m: f'{{{{ {m.group(1)} | safe }}}}',
+            lambda m: rf'{{{{ {m.group(1)} | safe }}}}',
             source
         )
         
         # <% code %> - execute code (for loops, conditions, etc)
         source = re.sub(
             r'<%\s*([^%]*?)\s*%>',
-            lambda m: f'<!-- {m.group(1)} -->',
+            lambda m: rf'<!-- {m.group(1)} -->',
             source
         )
         

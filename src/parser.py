@@ -5,7 +5,7 @@ Builds AST from Nexus tokens
 
 from dataclasses import dataclass
 from typing import List, Optional, Any
-from nexus_lexer import Token, TokenType, NexusLexer
+from src.lexer import Token, TokenType, NexusLexer
 
 # AST Node types for Nexus
 @dataclass

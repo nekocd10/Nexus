@@ -6,9 +6,9 @@ Main CLI interface - completely original language
 
 import sys
 import os
-from nexus_interpreter import run_nexus
-from nexus_lexer import NexusLexer
-from nexus_parser import parse_nexus
+from src.interpreter import run_nexus
+from src.lexer import NexusLexer
+from src.parser import parse_nexus
 
 def main():
     if len(sys.argv) < 2:
@@ -55,7 +55,7 @@ def main():
 def run_repl():
     """Interactive REPL mode"""
     print("Nexus REPL (type 'exit' to quit)")
-    from nexus_interpreter import NexusInterpreter
+    from src.interpreter import NexusInterpreter
     
     interpreter = NexusInterpreter()
     

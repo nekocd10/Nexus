@@ -354,9 +354,9 @@ class NexusModuleLoader:
     
     def _load_nexus(self, file_path: str) -> Any:
         """Load Nexus module"""
-        from nexus_lexer import NexusLexer
-        from nexus_parser import NexusParser
-        from nexus_interpreter import NexusInterpreter
+        from src.lexer import NexusLexer
+        from src.parser import NexusParser
+        from src.interpreter import NexusInterpreter
         
         with open(file_path, 'r') as f:
             source = f.read()

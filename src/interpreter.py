@@ -3,7 +3,7 @@ Nexus Language Interpreter
 Executes Nexus AST
 """
 
-from nexus_parser import *
+from src.parser import *
 from typing import Any, Dict, List, Optional
 import sys
 
@@ -76,6 +76,8 @@ class NexusInterpreter:
     
     def setup_builtins(self):
         self.env.define('output', self.builtin_output, mutable=False)
+        self.env.define('print', self.builtin_output, mutable=False)
+        self.env.define('println', self.builtin_output, mutable=False)
         self.env.define('input', self.builtin_input, mutable=False)
         self.env.define('type_of', self.builtin_type_of, mutable=False)
         self.env.define('length', self.builtin_length, mutable=False)
@@ -259,7 +261,7 @@ class NexusInterpreter:
 
 
 def run_nexus(source: str):
-    from nexus_parser import parse_nexus
+    from src.parser import parse_nexus
     ast = parse_nexus(source)
     interpreter = NexusInterpreter()
     return interpreter.interpret(ast)

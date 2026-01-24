@@ -118,7 +118,7 @@ class NexusCLI:
             },
             "output": {
                 "frontend": "dist/index.nxs",
-                "backend": "dist/app.py"
+                "backend": "dist/api.nxsjs"
             },
             "dependencies": {},
             "devDependencies": {},
@@ -241,9 +241,9 @@ class NexusCLI:
         print(f"▶️  Running: {file_path}")
         
         try:
-            from nexus_interpreter import NexusInterpreter
-            from nexus_lexer import NexusLexer
-            from nexus_parser import NexusParser
+            from src.interpreter import NexusInterpreter
+            from src.lexer import NexusLexer
+            from src.parser import NexusParser
             
             with open(file_path, 'r') as f:
                 source = f.read()

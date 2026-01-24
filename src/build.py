@@ -69,8 +69,8 @@ class NexusBuilder:
         print("✅ Build complete!")
     
     def build_frontend(self):
-        """Compile .nsk frontend files to JavaScript, output as .nsk file"""
-        print("  📦 Compiling frontend...")
+        """Copy .nxs frontend files to dist"""
+        print("  📦 Bundling frontend...")
         
         entry = self.config.config.get("entry", {}).get("frontend")
         if not entry or not Path(entry).exists():
@@ -78,18 +78,25 @@ class NexusBuilder:
             return
         
         try:
-            from src.frontend import NxsCompiler
-            compiler = NxsCompiler(entry)
-            # Output as .nsk file for custom browser parser to load directly
-            output = self.config.config.get("output", {}).get("frontend", "dist/index.nsk")
-            compiler.write_output(output)
-            print(f"    ✓ Compiled {entry} -> {output}")
+            # Copy .nxs files as-is (no conversion to HTML)
+            output = self.config.config.get("output", {}).get("frontend", "dist/index.nxs")
+            Path(output).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(entry, output)
+            print(f"    ✓ Bundled {entry} -> {output}")
+            
+            # Also copy all other .nxs files in src/
+            for nxs_file in Path("src").rglob("*.nxs"):
+                if nxs_file.name != "index.nxs":
+                    dest = self.dist_dir / "components" / nxs_file.name
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy(nxs_file, dest)
+                    print(f"    ✓ Bundled {nxs_file} -> {dest}")
         except Exception as e:
             print(f"    ❌ Frontend build failed: {e}")
     
     def build_backend(self):
-        """Compile .nxsjs backend files (pure Nexus, not JavaScript)"""
-        print("  🔧 Compiling backend...")
+        """Bundle .nxsjs backend files (pure Nexus format, not compiled)"""
+        print("  🔧 Bundling backend...")
         
         entry = self.config.config.get("entry", {}).get("backend")
         if not entry or not Path(entry).exists():
@@ -97,14 +104,23 @@ class NexusBuilder:
             return
         
         try:
-            from src.backend import NxsjsCompiler
-            compiler = NxsjsCompiler(entry)
-            nexus_code = compiler.compile()
-            output = self.config.config.get("output", {}).get("backend", "dist/app.nxsjs")
+            # Copy main entry point as-is (pure Nexus format)
+            output = self.config.config.get("output", {}).get("backend", "dist/api.nxsjs")
             Path(output).parent.mkdir(parents=True, exist_ok=True)
-            with open(output, 'w') as f:
-                f.write(nexus_code)
-            print(f"    ✓ Compiled {entry} -> {output}")
+            shutil.copy(entry, output)
+            print(f"    ✓ Bundled {entry} -> {output}")
+            
+            # Copy all other .nxsjs files in src/ as-is (pure Nexus backend format)
+            for nxsjs_file in Path("src").rglob("*.nxsjs"):
+                if nxsjs_file.name != Path(entry).name:
+                    try:
+                        # Copy .nxsjs files as-is to preserve pure Nexus backend syntax
+                        dest = self.dist_dir / "api" / nxsjs_file.name
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy(nxsjs_file, dest)
+                        print(f"    ✓ Bundled {nxsjs_file} -> {dest}")
+                    except Exception as e:
+                        print(f"    ⚠️  Failed to bundle {nxsjs_file}: {e}")
         except Exception as e:
             print(f"    ❌ Backend build failed: {e}")
     

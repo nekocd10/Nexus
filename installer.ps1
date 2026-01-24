@@ -47,12 +47,30 @@ Push-Location $extracted.FullName
 Write-Host "Installing Nexus via pip (user install)..."
 & $pyCmd.Source -m pip install --user .
 
-# Show user-base scripts path hint
+# Show user-base scripts path hint and add it to user PATH (idempotent)
 try {
     $userBase = & $pyCmd.Source -c "import site,sys;print(site.USER_BASE)"
     $scriptsPath = Join-Path $userBase 'Scripts'
-    Write-Host "If 'nexus' is not found after install, add this to your PATH:"
-    Write-Host "  $scriptsPath"
+    Write-Host "Detected user Scripts path: $scriptsPath"
+
+    # Get current user PATH (may be empty)
+    $currentUserPath = [Environment]::GetEnvironmentVariable('PATH','User')
+    if (-not $currentUserPath) { $currentUserPath = '' }
+
+    # Add to user PATH if not present
+    if ($currentUserPath -notlike "*$scriptsPath*") {
+        $newUserPath = if ($currentUserPath -eq '') { $scriptsPath } else { "$currentUserPath;$scriptsPath" }
+        [Environment]::SetEnvironmentVariable('PATH', $newUserPath, 'User')
+        Write-Host "Added $scriptsPath to user PATH. It will be available in new shells."
+    } else {
+        Write-Host "User PATH already contains $scriptsPath"
+    }
+
+    # Update current session PATH so the user can run 'nexus' immediately
+    if ($env:Path -notlike "*$scriptsPath*") {
+        $env:Path = "$scriptsPath;$env:Path"
+        Write-Host "Updated current session PATH to include $scriptsPath. You can run 'nexus' now." 
+    }
 } catch {
     Write-Host "Installed; if 'nexus' is not on PATH, ensure your Python user Scripts directory is in PATH."
 }

@@ -156,7 +156,9 @@ class NexusCLI:
         version = args[1] if len(args) > 1 else "latest"
         
         try:
-            from src.package_manager import NxsPackageManager
+            # use relative import so entrypoint "nexus" works both installed and
+            # when running `python -m src.cli` during development
+            from .package_manager import NxsPackageManager
             pm = NxsPackageManager()
             
             # Try custom registry first, then local
@@ -241,9 +243,10 @@ class NexusCLI:
         print(f"▶️  Running: {file_path}")
         
         try:
-            from nexus_interpreter import NexusInterpreter
-            from nexus_lexer import NexusLexer
-            from nexus_parser import NexusParser
+            # interpreter/lexer/parser modules are located in this package
+            from .interpreter import NexusInterpreter
+            from .lexer import NexusLexer
+            from .parser import NexusParser
             
             with open(file_path, 'r') as f:
                 source = f.read()
@@ -272,13 +275,16 @@ class NexusCLI:
         print("🏗️  Building project...")
         
         try:
-            from nxs_build import NexusBuilder, NexusBuildConfig
+            # builder module lives in this package; earlier versions imported
+            # from a top‑level `nxs_build` package which isn't provided by
+            # our setup.py. use relative import to ensure it resolves correctly
+            from .build import NexusBuilder, NexusBuildConfig
             config = NexusBuildConfig(config_file)
             builder = NexusBuilder(config)
             builder.build()
         
         except ImportError:
-            print("❌ Build system not available")
+            print("❌ Build system not available (missing `src.build`)")
             sys.exit(1)
     
     def cmd_dev(self, args: list):
@@ -292,7 +298,8 @@ class NexusCLI:
         port = int(args[0]) if args else 5000
         
         try:
-            from nxs_build import NexusBuilder, NexusBuildConfig, NexusDevServer
+            # same fix as build command above
+            from .build import NexusBuilder, NexusBuildConfig, NexusDevServer
             config = NexusBuildConfig(config_file)
             builder = NexusBuilder(config)
             builder.build()
@@ -301,7 +308,7 @@ class NexusCLI:
             server.start(port)
         
         except ImportError:
-            print("❌ Build system not available")
+            print("❌ Build system not available (missing `src.build`)")
             sys.exit(1)
         except Exception as e:
             print(f"❌ Error: {e}")
@@ -343,9 +350,9 @@ class NexusCLI:
         print()
         
         try:
-            from nexus_interpreter import NexusInterpreter
-            from nexus_lexer import NexusLexer
-            from nexus_parser import NexusParser
+            from .interpreter import NexusInterpreter
+            from .lexer import NexusLexer
+            from .parser import NexusParser
             
             interpreter = NexusInterpreter()
             

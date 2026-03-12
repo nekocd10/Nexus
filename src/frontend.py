@@ -55,6 +55,24 @@ class NxsParser:
         self.source = re.sub(r'<script\s*[^>]*>.*?</script>', '', self.source, flags=re.DOTALL | re.IGNORECASE)
         self.source = re.sub(r'<style\s*[^>]*>.*?</style>', '', self.source, flags=re.DOTALL | re.IGNORECASE)
     
+    def compile_custom_tags(self, source: str) -> str:
+        """Convert custom Nexus GUI tags (@state, <btn>, <view>, etc) to HTML
+
+        The parser used to have one method for HTML syntax and another for
+        custom tags. earlier versions accidentally removed this helper which
+        led to `AttributeError` when `.parse()` attempted to call it.
+        """
+        result = source
+        # apply each of the small replacement helpers in order
+        result = self.replace_button(result)
+        result = self.replace_input(result)
+        result = self.replace_view(result)
+        result = self.replace_card(result)
+        result = self.replace_state(result)
+        result = self.replace_bind(result)
+        result = self.replace_event(result)
+        return result
+
     def compile_ejs_syntax(self, source: str) -> str:
         """Support EJS template syntax like <%= %>, <% %>, <%- %>"""
         # <%= expression %> - escaped output
@@ -81,22 +99,13 @@ class NxsParser:
         return source
     
     def compile_html_syntax(self, source: str) -> str:
-        """Support standard HTML syntax"""
-        # HTML is kept as-is, just pass through
+        """Support standard HTML syntax.
+
+        This method no longer transforms custom tags; those are handled in
+        ``compile_custom_tags`` above. The HTML syntax is already valid and
+        can simply be returned unchanged.
+        """
         return source
-        """Convert custom tags to HTML"""
-        result = source
-        
-        # Custom GUI components
-        result = self.replace_button(result)
-        result = self.replace_input(result)
-        result = self.replace_view(result)
-        result = self.replace_card(result)
-        result = self.replace_state(result)
-        result = self.replace_bind(result)
-        result = self.replace_event(result)
-        
-        return result
     
     def replace_button(self, source: str) -> str:
         """<button>text</button> or <btn>text</btn>"""

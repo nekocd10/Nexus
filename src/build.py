@@ -78,7 +78,9 @@ class NexusBuilder:
             return
         
         try:
-            from nxs_frontend import NxsCompiler
+            # previous versions exposed frontend compiler as top‑level nxs_frontend
+            # but when installed from this repo the module lives inside the package
+            from .frontend import NxsCompiler
             compiler = NxsCompiler(entry)
             output = self.config.config.get("output", {}).get("frontend", "dist/index.html")
             compiler.write_output(output)
@@ -95,7 +97,8 @@ class NexusBuilder:
             return
         
         try:
-            from nxs_backend import NxsjsCompiler
+            # backend compiler is part of this package
+            from .backend import NxsjsCompiler
             compiler = NxsjsCompiler(entry)
             python_code = compiler.compile()
             output = self.config.config.get("output", {}).get("backend", "dist/app.py")

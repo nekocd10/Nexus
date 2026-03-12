@@ -3,7 +3,7 @@ Nexus Language Interpreter
 Executes Nexus AST
 """
 
-from nexus_parser import *
+from .parser import *
 from typing import Any, Dict, List, Optional
 import sys
 
@@ -259,7 +259,8 @@ class NexusInterpreter:
 
 
 def run_nexus(source: str):
-    from nexus_parser import parse_nexus
+    # use relative import to locate parser within this package
+    from .parser import parse_nexus
     ast = parse_nexus(source)
     interpreter = NexusInterpreter()
     return interpreter.interpret(ast)

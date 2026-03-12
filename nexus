@@ -6,9 +6,17 @@ Main CLI interface - completely original language
 
 import sys
 import os
-from nexus_interpreter import run_nexus
-from nexus_lexer import NexusLexer
-from nexus_parser import parse_nexus
+# the standalone script is intended for simple usage outside a Python
+# package; however, when installed via `pip install -e .` the modules live
+# under the `src` package. attempt relative imports first, then fallback.
+try:
+    from src.interpreter import run_nexus
+    from src.lexer import NexusLexer
+    from src.parser import parse_nexus
+except ImportError:
+    from nexus_interpreter import run_nexus
+    from nexus_lexer import NexusLexer
+    from nexus_parser import parse_nexus
 
 def main():
     if len(sys.argv) < 2:

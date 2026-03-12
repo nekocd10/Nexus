@@ -5,6 +5,10 @@ nexus_lang.egg-info/SOURCES.txt
 nexus_lang.egg-info/dependency_links.txt
 nexus_lang.egg-info/entry_points.txt
 nexus_lang.egg-info/top_level.txt
+nexus_lang.egg-info/testproj/README.md
+nexus_lang.egg-info/testproj/nxs.json
+nexus_lang.egg-info/testproj/src/api.nxsjs
+nexus_lang.egg-info/testproj/src/index.nxs
 src/__init__.py
 src/backend.py
 src/build.py

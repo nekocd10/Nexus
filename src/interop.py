@@ -354,9 +354,12 @@ class NexusModuleLoader:
     
     def _load_nexus(self, file_path: str) -> Any:
         """Load Nexus module"""
-        from nexus_lexer import NexusLexer
-        from nexus_parser import NexusParser
-        from nexus_interpreter import NexusInterpreter
+        # interop may need to tokenize and parse Nexus source; use
+        # relative imports so the modules resolve correctly whether the
+        # package is installed in editable mode or built into a wheel.
+        from .lexer import NexusLexer
+        from .parser import NexusParser
+        from .interpreter import NexusInterpreter
         
         with open(file_path, 'r') as f:
             source = f.read()

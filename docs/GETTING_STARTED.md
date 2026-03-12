@@ -60,6 +60,25 @@ nexus> [| 1, 2, 3 |] => output
 [1, 2, 3]
 ```
 
+## Web Development & Dev Server
+
+The Nexus CLI can build frontend and backend code and start a simple HTTP
+server for rapid iteration. When you run `nexus dev` inside a Nexus project the
+source files are **compiled into `dist/`** and served from there. The generated
+`index.html` now includes the tiny runtime script inline, so there is no
+longer a separate `nexus-runtime.js` file to fetch. If you see a `404` for
+`/nexus-runtime.js` it means you're either using an older release or you
+opened the files directly without running the build step.
+
+```bash
+cd my-nexus-project
+nexus dev          # builds frontend/backend then serves http://localhost:5000
+```
+
+> 🔧 **Note**: you must run the CLI from within a project that contains
+> `nxs.json` (created by `nexus new`). Running `nexus dev` in an unrelated
+> directory will not work and may fall back to the older interpreter server.
+
 ## Language Basics
 
 ### Variables
